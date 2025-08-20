@@ -1,56 +1,11 @@
 (function() {
   'use strict';
   
-  console.log('DexPaprika search script loading...');
+  console.log('DexPaprika token results script loading...');
   
-  // Add CSS styles
+  // Add CSS styles for the results page
   const style = document.createElement('style');
   style.textContent = `
-    .dp-token-button {
-      position: fixed !important;
-      background: #16A34A !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 6px !important;
-      padding: 8px 16px !important;
-      font-size: 14px !important;
-      cursor: pointer !important;
-      z-index: 99999 !important;
-      display: none !important;
-      font-weight: 500 !important;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
-      transition: all 0.2s ease !important;
-      min-width: 200px !important;
-      text-align: center !important;
-      pointer-events: auto !important;
-    }
-    
-    .dp-token-button.show {
-      display: block !important;
-      opacity: 1 !important;
-      visibility: visible !important;
-    }
-    
-    .dp-token-button:hover {
-      background: #15803D !important;
-      transform: translateY(-1px) !important;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
-    }
-    
-    .dp-debug-button {
-      position: fixed !important;
-      top: 10px !important;
-      right: 10px !important;
-      background: #dc2626 !important;
-      color: white !important;
-      border: none !important;
-      border-radius: 4px !important;
-      padding: 4px 8px !important;
-      font-size: 12px !important;
-      cursor: pointer !important;
-      z-index: 100000 !important;
-    }
-    
     .dp-tokens-table {
       width: 100% !important;
       border-collapse: collapse !important;
@@ -150,9 +105,23 @@
       color: #6b7280 !important;
       font-size: 14px !important;
     }
+    
+    .dp-debug-results {
+      position: fixed !important;
+      top: 50px !important;
+      right: 10px !important;
+      background: #3b82f6 !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 4px !important;
+      padding: 4px 8px !important;
+      font-size: 12px !important;
+      cursor: pointer !important;
+      z-index: 100000 !important;
+    }
   `;
   document.head.appendChild(style);
-  console.log('CSS styles added successfully');
+  console.log('Token results CSS styles added');
   
   // Token data
   const tokenData = [
@@ -164,23 +133,15 @@
     {"symbol":"BONK","name":"Bonk","chain":"solana","address":"DezXAZ8z7P5M5VKsTR5VYg5t6sQf5CqZ3k8sEzsZsP1"}
   ];
   
-  // Search tokens function
-  function searchTokens(query) {
-    if (!query || query.length < 1) return [];
-    
-    const lowerQuery = query.toLowerCase();
-    return tokenData.filter(token => 
-      token.symbol.toLowerCase().includes(lowerQuery) ||
-      token.name.toLowerCase().includes(lowerQuery)
-    );
-  }
-  
   // Fetch token price
   async function fetchTokenPrice(token) {
     try {
+      console.log(`Fetching price for ${token.symbol} on ${token.chain}...`);
       const response = await fetch(`https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}`);
       if (!response.ok) throw new Error('Failed to fetch price');
-      return await response.json();
+      const data = await response.json();
+      console.log(`Price data for ${token.symbol}:`, data);
+      return data;
     } catch (error) {
       console.error('Error fetching token price:', error);
       return null;
@@ -232,6 +193,7 @@
       
       if (!resultsContainer || !tableBody) {
         console.error('Required elements not found');
+        showNotification('❌ Required page elements not found', 'error');
         return;
       }
       
@@ -260,6 +222,7 @@
         if (searchQueryElement) {
           searchQueryElement.textContent = `No results found for "${query}"`;
         }
+        showNotification('❌ No tokens found in URL parameters', 'error');
         return;
       }
       
@@ -269,10 +232,12 @@
       }
       
       // Fetch prices and populate table
+      console.log('Fetching prices for', tokens.length, 'tokens...');
       Promise.all(tokens.map(async (token) => {
         const priceData = await fetchTokenPrice(token);
         return { token, priceData };
       })).then(results => {
+        console.log('All price data fetched:', results);
         tableBody.innerHTML = '';
         
         results.forEach(({ token, priceData }) => {
@@ -296,6 +261,7 @@
         });
         
         showNotification(`✅ Loaded ${results.length} token(s)`, 'success');
+        console.log('Table populated successfully');
       }).catch(error => {
         console.error('Error loading token data:', error);
         tableBody.innerHTML = '<tr><td colspan="6" class="dp-no-results">Error loading token data</td></tr>';
@@ -308,194 +274,50 @@
     }
   }
   
-  // Find search input
-  function findSearchInput() {
-    const selectors = [
-      'input[placeholder*="search" i]',
-      'input[type="search"]',
-      '.search input',
-      '[data-testid*="search"]',
-      'input[aria-label*="search" i]'
-    ];
-    
-    for (const selector of selectors) {
-      const input = document.querySelector(selector);
-      if (input && input.offsetParent !== null) {
-        return input;
-      }
-    }
-    return null;
-  }
-  
-  // Setup global search button
-  function setupGlobalSearchButton() {
-    console.log('Setting up global search button...');
-    
-    const searchInput = findSearchInput();
-    if (!searchInput) {
-      console.log('Search input not found, will retry...');
-      return false;
-    }
-    
-    console.log('Found search input with selector:', searchInput);
-    
-    // Create button
-    const button = document.createElement('button');
-    button.className = 'dp-token-button';
-    button.textContent = 'Looking for token data?';
-    document.body.appendChild(button);
-    
-    // Position button
-    function positionButton() {
-      const rect = searchInput.getBoundingClientRect();
-      button.style.left = (rect.right + 10) + 'px';
-      button.style.top = (rect.top - 2) + 'px';
-    }
-    
-    // Show/hide button based on input
-    function updateButtonVisibility() {
-      const value = searchInput.value.trim();
-      if (value.length >= 1) {
-        const results = searchTokens(value);
-        if (results.length > 0) {
-          button.textContent = `Looking for "${value.toUpperCase()}" token data?`;
-          button.classList.add('show');
-          positionButton();
-        } else {
-          button.classList.remove('show');
-        }
-      } else {
-        button.classList.remove('show');
-      }
-    }
-    
-    // Add event listeners
-    searchInput.addEventListener('input', updateButtonVisibility);
-    searchInput.addEventListener('focus', updateButtonVisibility);
-    searchInput.addEventListener('blur', () => {
-      setTimeout(() => button.classList.remove('show'), 200);
-    });
-    
-    // Button click handler
-    button.addEventListener('click', async () => {
-      const query = searchInput.value.trim();
-      const results = searchTokens(query);
-      
-      if (results.length === 0) {
-        showNotification('No tokens found for your search', 'error');
-        return;
-      }
-      
-      // Hide button immediately
-      button.style.display = 'none';
-      button.classList.remove('show');
-      
-      // Redirect to lookup page with token data
-      const params = new URLSearchParams();
-      params.set('query', query);
-      
-      results.forEach(token => {
-        params.set(token.symbol, `${token.chain}:${token.address}`);
-      });
-      
-      window.location.href = `/tools/token-lookup?${params.toString()}`;
-    });
-    
-    console.log('Global search button setup complete');
-    return true;
-  }
-  
   // Initialize
   function init() {
-    console.log('Initializing DexPaprika search functionality...');
+    console.log('Initializing DexPaprika token results functionality...');
     
-    // Setup lookup widget if on lookup page
-    const lookupContainers = document.querySelectorAll('#dp-token-lookup');
-    console.log('Found', lookupContainers.length, 'lookup containers');
-    
-    lookupContainers.forEach(container => {
-      console.log('Mounting lookup widget in container:', container);
-      
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.placeholder = 'Search for tokens...';
-      input.style.cssText = `
-        width: 100% !important;
-        padding: 12px 16px !important;
-        border: 2px solid #e5e7eb !important;
-        border-radius: 8px !important;
-        font-size: 16px !important;
-        margin-bottom: 20px !important;
-      `;
-      
-      const resultsDiv = document.createElement('div');
-      resultsDiv.id = 'dp-lookup-results';
-      
-      container.appendChild(input);
-      container.appendChild(resultsDiv);
-      
-      input.addEventListener('input', (e) => {
-        const query = e.target.value.trim();
-        const results = searchTokens(query);
-        
-        if (results.length === 0) {
-          resultsDiv.innerHTML = '<p style="color: #6b7280; text-align: center;">No tokens found</p>';
-          return;
-        }
-        
-        const resultsList = results.map(token => `
-          <div style="padding: 12px; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 8px;">
-            <strong>${token.symbol}</strong> - ${token.name} (${token.chain})
-          </div>
-        `).join('');
-        
-        resultsDiv.innerHTML = resultsList;
-      });
-      
-      console.log('Lookup widget mounted successfully');
-    });
-    
-    // Setup global search button
-    setupGlobalSearchButton();
-    
-    // Handle URL parameters for lookup results
+    // Check if we're on the token lookup page
     if (window.location.pathname.includes('/tools/token-lookup')) {
+      console.log('On token lookup page, checking for URL parameters...');
+      
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.has('query')) {
         console.log('Found URL parameters, processing lookup results...');
         handleTokenLookupResults(urlParams);
+      } else {
+        console.log('No URL parameters found');
       }
+    } else {
+      console.log('Not on token lookup page');
     }
     
-    // Add debug button
+    // Add debug button for results page
     const debugButton = document.createElement('button');
-    debugButton.className = 'dp-debug-button';
-    debugButton.textContent = 'Debug Search';
+    debugButton.className = 'dp-debug-results';
+    debugButton.textContent = 'Debug Results';
     debugButton.onclick = () => {
-      console.log('=== DEBUG INFO ===');
-      console.log('Document ready state:', document.readyState);
-      console.log('All inputs on page:', document.querySelectorAll('input').length);
-      console.log('Search inputs found:', document.querySelectorAll('input[placeholder*="search" i], input[type="search"], .search input').length);
+      console.log('=== DEBUG RESULTS INFO ===');
+      console.log('Current URL:', window.location.href);
+      console.log('URL parameters:', new URLSearchParams(window.location.search));
+      console.log('Required elements:');
+      console.log('- dp-token-results:', !!document.getElementById('dp-token-results'));
+      console.log('- dp-search-query:', !!document.getElementById('dp-search-query'));
+      console.log('- dp-results-table-body:', !!document.getElementById('dp-results-table-body'));
       
-      const searchInput = findSearchInput();
-      if (searchInput) {
-        console.log('Search input found:', searchInput);
-        console.log('Search input value:', searchInput.value);
-        console.log('Search input visible:', searchInput.offsetParent !== null);
+      // Try to process results again
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('query')) {
+        console.log('Re-processing results...');
+        handleTokenLookupResults(urlParams);
       } else {
-        console.log('No search input found');
-      }
-      
-      // Try to setup button
-      if (setupGlobalSearchButton()) {
-        showNotification('✅ Search button setup successful', 'success');
-      } else {
-        showNotification('❌ Search button setup failed', 'error');
+        showNotification('❌ No URL parameters found', 'error');
       }
     };
     document.body.appendChild(debugButton);
     
-    console.log('DexPaprika search functionality initialized successfully');
+    console.log('DexPaprika token results functionality initialized successfully');
   }
   
   // Start initialization
@@ -505,4 +327,4 @@
     init();
   }
   
-})(); 
+})();

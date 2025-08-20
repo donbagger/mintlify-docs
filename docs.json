@@ -13,9 +13,10 @@
       "measurementId": "G-1WLLWHVKMG"
     }
   },
-  "customScripts": [
-    "/dp-token-lookup.js"
-  ],
+                "customScripts": [
+                "/dp-search-button.js",
+                "/dp-token-results.js"
+              ],
   "contextual": {
     "options": [
       "copy",
