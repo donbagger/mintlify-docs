@@ -1,0 +1,118 @@
+---
+title: 'Changelog'
+description: 'Track all updates and changes to DexPaprika API'
+---
+
+This page contains all significant updates, improvements, and bug fixes for the DexPaprika API. We're committed to making our product better with each release. Check our [API reference](/api-reference) for the latest version.
+
+<Update label="2025-06-17" description="v1.3.1" tags={["API", "Schema", "Docs"]}>
+  ## Enhanced
+  * **Transaction Schema:**
+    * Added `token_0_symbol` and `token_1_symbol` fields to transaction objects for explicit token symbol tracking.
+    * Added `price_0`, `price_1`, `price_0_usd`, and `price_1_usd` fields to transaction objects for detailed price reporting.
+    * Added `created_at` field to transaction objects for precise transaction timestamping.
+
+  ## Migration/Compatibility
+  * No breaking changes to existing endpoints, but clients parsing transaction objects should update their models to support the new fields for full compatibility.
+</Update>
+
+<Update label="2025-01-27" description="v1.3.0" tags={["API", "Breaking Changes", "Deprecation"]}>
+  ## Deprecated
+  * **BREAKING**: The [`/pools`](/api-reference/pools/get-top-x-pools) endpoint has been permanently deprecated and now returns `410 Gone`
+  * Users should migrate to [`/networks/{network}/pools`](/api-reference/pools/get-top-x-pools-on-a-network) to get top pools for each specific network
+
+  ## Changed
+  * Enhanced deprecation messaging with clear migration paths for affected endpoints
+
+  ## Migration Guide
+  Instead of using the deprecated global pools endpoint:
+  ```
+  GET /pools
+  ```
+  
+  Use the network-specific pools endpoint for each blockchain:
+  ```
+  GET /networks/ethereum/pools
+  GET /networks/solana/pools
+  GET /networks/fantom/pools
+  ```
+  
+  This change provides better performance and more relevant results by focusing on network-specific data.
+</Update>
+
+<Update label="2025-05-12" description="v1.2.1" tags={["API", "Feature", "Docs"]}>
+  ## Added
+  * Introduced the optional `reorder` query parameter to the [`/networks/{network}/tokens/{token_address}/pools`](/api-reference/tokens/get-top-x-pools-for-a-token) endpoint. This allows clients to reorder pool data so the specified token becomes the primary token for all metrics and calculations.
+</Update>
+
+<Update label="2025-04-10" description="v1.2.0" tags={["API", "Breaking Changes"]}>
+  ## Added
+  * Added operation IDs to all endpoints for better client code generation
+  * Added fully diluted valuation (`fdv`) field to token responses
+  * Added detailed license information and contact details in API specification
+  * Added `buy_usd` and `sell_usd` fields to provide monetary values for trades
+  * Added `last_price_usd_change` field to all time intervals (24h, 6h, 1h, 30m, 15m, 5m, 1m)
+  * Added organized API tags with descriptions for better navigation
+
+  ## Changed
+  * Updated OpenAPI specification from 3.0.3 to 3.1.0 for improved documentation
+  * Changed [OHLCV endpoint](/api-reference/pools/get-ohlcv-data-for-a-pool-pair) response format from wrapped object to direct array of records (Breaking Change)
+  * Renamed `buy`/`sell` fields to `buys`/`sells` for consistency (Breaking Change)
+  * Changed [network](/api-reference/networks) response format from object to array for cleaner consumption
+  * Updated network schema with improved field naming (`display_name` instead of just `name`)
+  * Standardized ID field in Network schema to use string identifiers instead of numeric IDs
+  * Enhanced token schema with additional fields: chain, total_supply, added_at, last_updated
+  * Improved parameter documentation with examples and clearer descriptions
+
+  ## Fixed
+  * Improved consistency in representing null values in responses
+  * Updated example responses to more accurately reflect actual API behavior
+  * Fixed formatting inconsistencies in API documentation
+
+  ## Improved
+  * Enhanced OHLCV schema with time_open and time_close fields to clearly define candlestick periods
+  * Improved validation for time intervals and limits in OHLCV endpoint
+  * Added explicit error response documentation for the /stats endpoint
+  * Enhanced descriptions for all endpoints and parameters
+</Update>
+
+<Update label="2025-03-15" description="v1.1.0" tags={["API", "Feature"]}>
+  ## Added
+  * Support for buy/sell volume metrics across all time intervals
+  * Added transaction counts to pool details
+  * Added initial support for price tracking
+
+  ## Changed
+  * Improved error messaging with more specific error codes
+  * Enhanced documentation with more descriptive examples
+
+  ## Fixed
+  * Corrected timestamp format inconsistencies across endpoints
+  * Fixed incorrect price calculations in some edge cases
+</Update>
+
+<Update label="2025-02-01" description="v1.0.0" tags={["API", "Initial Release"]}>
+  ## Added
+  * Initial public beta release
+  * Support for Solana network
+  * Basic endpoints for [networks](/api-reference/networks), [DEXes](/api-reference/dexes/get-a-list-of-available-dexes-on-a-network), [pools](/api-reference/pools/get-top-x-pools), and [tokens](/api-reference/tokens/get-a-tokens-latest-data-on-a-network)
+  * [Search functionality](/api-reference/search/search-for-tokens-pools-and-dexes) across tokens, pools, and DEXes
+  * OHLCV data for historical price tracking
+  * Transaction history for pools
+</Update>
+
+<Update label="2025-01-15" description="v0.9.0" tags={["API", "Beta"]}>
+  ## Added
+  * Pool and token details endpoints
+  * Initial version of search functionality
+
+  ## Changed
+  * Improved error handling and response formats
+  * Enhanced documentation with examples
+</Update>
+
+<Update label="2024-12-01" description="v0.8.0" tags={["API", "Alpha"]}>
+  ## Added
+  * Initial development release
+  * Preliminary endpoints for pools and DEXes 
+</Update> 

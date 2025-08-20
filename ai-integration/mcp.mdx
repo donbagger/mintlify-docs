@@ -1,0 +1,208 @@
+---
+title: 'Installing MCP Server for DexPaprika'
+sidebarTitle: "Model Context Protocol Server"
+description: 'Integrating DexPaprika data with Claude.ai using Model Context Protocol (MCP)'
+---
+
+## What is MCP?
+
+MCP (Model Context Protocol) is an [open protocol standard customized by Claude](https://modelcontextprotocol.io/introduction) for establishing unified context interaction between AI models and development environments, enabling AI to better understand and process code. The DexPaprika MCP server leverages this protocol to provide AI assistants like Claude with access to real-time crypto and DeFi market data, enabling advanced conversations about blockchain networks, decentralized exchanges (DEXes), liquidity pools, and tokens across the DeFi ecosystem.
+
+<Note>
+  **Looking for an easier setup?** If you prefer not to install anything locally, check out our [DexPaprika Hosted MCP Server](/ai-integration/hosted-mcp-server) for instant access with zero installation required.
+</Note>
+
+## Installation Guide
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/rIxFn2PhtvI?si=c1BZ5bfS6chC7p-a"
+  title="DexPaprika MCP Server Installation Guide"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
+
+### Prerequisites
+
+Before installing the DexPaprika MCP server, ensure you have:
+
+- [Node.js](https://nodejs.org/) (v16 or higher) installed on your system
+- [npm](https://www.npmjs.com/) (comes with Node.js) or [yarn](https://yarnpkg.com/) package manager
+- [Claude Desktop](https://claude.ai/desktop) or [Cursor](https://cursor.sh/) installed if you want to use the MCP server with these applications
+
+### Installation Options
+
+#### Option 1: Global Installation (Recommended)
+
+Installing the DexPaprika MCP server globally makes it available throughout your system:
+
+```bash
+npm install -g dexpaprika-mcp
+```
+
+After installation, you can start the server by running:
+
+```bash
+dexpaprika-mcp
+```
+
+#### Option 2: Use with npx (No Installation)
+
+Alternatively, you can run the server directly without installation using npx:
+
+```bash
+npx dexpaprika-mcp
+```
+
+This is useful for trying out the server without permanently installing it.
+
+### Verification
+
+To verify that your installation was successful, run:
+
+```bash
+dexpaprika-mcp --version
+```
+
+You should see the current version number of the DexPaprika MCP server.
+
+## Configuration
+
+### Claude Desktop Configuration
+
+To use the DexPaprika MCP server with Claude Desktop:
+
+1. Download and install [Claude Desktop](https://claude.ai/desktop) if you haven't already
+2. Locate your Claude Desktop configuration file:
+   - **macOS**: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+
+3. If the file doesn't exist, create it with the following content:
+```json
+{
+  "mcpServers": {
+    "dexpaprika": {
+      "command": "dexpaprika-mcp"
+    }
+  }
+}
+```
+
+4. If the file already exists, add the DexPaprika configuration to the existing `mcpServers` object:
+```json
+"dexpaprika": {
+  "command": "dexpaprika-mcp"
+}
+```
+
+5. Save the file and restart Claude Desktop.
+
+6. To verify the configuration, open Claude Desktop and try asking a question about cryptocurrency data, such as "What are the top liquidity pools on Ethereum?"
+
+<Note>Make sure you have the latest version of our package by running `npm update -g dexpaprika-mcp`</Note>
+
+### Cursor Configuration
+
+If you're using Cursor IDE with Claude:
+
+1. Download and install [Cursor](https://cursor.sh/) if you haven't already
+2. Open Cursor and click on the Claude button in the sidebar
+3. Click on the settings icon (⚙️) and select "Add MCP Server"
+4. Fill in the following information:
+   - **Server name**: `dexpaprika`
+   - **Type**: `command` (select from dropdown)
+   - **Command to run**: `npx dexpaprika-mcp`
+5. Click "Add" to save the configuration
+6. Alternatively, Cursor will automatically use any MCP servers configured in Claude Desktop
+
+## Troubleshooting
+
+If you encounter issues with the DexPaprika MCP server:
+
+1. **Server not found errors**:
+   - Ensure the server is installed correctly using `npm list -g dexpaprika-mcp`
+   - Try reinstalling with `npm install -g dexpaprika-mcp`
+
+2. **Connection errors**:
+   - Check that your internet connection is active
+   - Verify that no firewall is blocking the connection
+
+3. **Configuration errors**:
+   - Double-check your configuration file syntax
+   - Ensure the path to the configuration file is correct for your OS
+
+4. **Command not found errors**:
+   - Ensure Node.js is installed and in your PATH
+   - Try using the full path to the npm or npx executables
+
+## Features
+
+The DexPaprika MCP server provides access to:
+
+- Blockchain network information across multiple chains
+- Decentralized exchange (DEX) data
+- Liquidity pool details and metrics
+- Token information and market data
+- Price and volume analytics for tokens and pools
+- Comprehensive search capabilities across DeFi entities
+
+## Available Tools
+
+The DexPaprika MCP server provides the following tools to Claude:
+
+1. **getNetworks** - Retrieve a list of all supported blockchain networks and their metadata
+2. **getNetworkDexes** - Get a list of available decentralized exchanges on a specific network
+3. **getTopPools** - Get a paginated list of top liquidity pools from all networks
+4. **getNetworkPools** - Get a list of top liquidity pools on a specific network
+5. **getDexPools** - Get top pools on a specific DEX within a network
+6. **getPoolDetails** - Get detailed information about a specific pool on a network
+7. **getTokenDetails** - Get detailed information about a specific token on a network
+8. **search** - Search for tokens, pools, and DEXes by name or identifier
+9. **getStats** - Get high-level statistics about the DexPaprika ecosystem
+
+## Usage Examples
+
+Once configured, you can ask Claude questions about DeFi data. Here are some example prompts:
+
+### General Market Data
+
+- "What are the top 5 liquidity pools across all networks by volume?"
+
+### Network-Specific Queries
+
+- "Which blockchain networks are supported by DexPaprika?"
+- "What are the top DEXes on the Solana network?"
+- "Show me the top 10 liquidity pools on Ethereum, ordered by volume."
+
+### DEX and Pool Analysis
+
+- "What are the most active pools on Uniswap V3?"
+- "Show me details about the USDC/ETH pool on Uniswap V3."
+- "Compare the trading volume between PancakeSwap and Uniswap."
+
+### Token Information
+
+- "What's the current price of SOL in the Raydium pool on Solana?"
+- "Find all pools that include the SHIB token."
+
+### Search Functionality
+
+- "Search for pools related to 'Bitcoin'"
+- "Find tokens with 'Pepe' in their name"
+
+## Advanced Queries
+
+You can also ask Claude to perform more complex analysis:
+
+- "Compare the liquidity and volume of the top 3 DEXes on Ethereum"
+- "What's the price difference of ETH between Uniswap and SushiSwap?"
+- "Show me the tokens with the highest price volatility in the last 24 hours"
+- "Analyze the trading volume trends for BNB on PancakeSwap"
+
+## Support
+
+If you need further assistance, you can:
+- Contact DexPaprika support by [email](support@coinpaprika.com)
+- Join the [Discord community](https://discord.gg/DhJge5TUGM) 

@@ -1,0 +1,719 @@
+---
+title: 'DexPaprika PHP SDK'
+sidebarTitle: "PHP SDK"
+description: 'The official PHP client library for the DexPaprika API, providing easy access to decentralized exchange data across multiple blockchain networks'
+---
+
+## Installation
+
+```bash
+# Using Composer
+composer require coinpaprika/dexpaprika-sdk-php
+
+# From source
+git clone https://github.com/coinpaprika/dexpaprika-sdk-php.git
+cd dexpaprika-sdk-php
+composer install
+```
+
+## Prerequisites
+
+- PHP 7.4 or higher
+- [Composer](https://getcomposer.org/)
+- `ext-json` PHP extension
+- Connection to the internet to access the DexPaprika API
+- No API key required
+
+## Quick Example: Get Token Price
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+use DexPaprika\Client;
+
+// Create client and get WETH price on Ethereum
+$client = new Client();
+$weth = $client->tokens->getTokenDetails('ethereum', '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2');
+echo "{$weth['name']}: \${$weth['price_usd']}";
+// Output: Wrapped Ether: $3245.67
+```
+
+## API Methods Reference
+
+<Note>Parameters marked with an asterisk (*) are required.</Note>
+
+<ResponseField name="Networks" type="category">
+  <Expandable title="methods">
+    ### client->networks->getNetworks()
+    
+    **Endpoint:** [GET `/networks`](/api-reference/networks/get-a-list-of-available-blockchain-networks)
+    
+    Gets all supported blockchain networks including Ethereum, Solana, etc. 
+    
+    **Parameters:** None
+    
+    **Returns:** Network IDs, names, and related information. [Response Structure](/api-reference/networks/get-a-list-of-available-blockchain-networks).
+    
+    ```php
+    // Get all networks
+    $networks = $client->networks->getNetworks();
+    echo "Found {$networks['networks']} networks";
+    ```
+    
+    ### client->networks->findNetwork(networkId)
+    
+    Gets a network by its ID.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network to find (e.g., 'ethereum')
+    
+    **Returns:** The network information or null if not found.
+    
+    ```php
+    // Find Ethereum network
+    $ethereum = $client->networks->findNetwork('ethereum');
+    if ($ethereum) {
+        echo "Found network: {$ethereum['display_name']}";
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="DEXes" type="category">
+  <Expandable title="methods">
+    ### client->networks->getNetworkDexes(networkId, options)
+    
+    **Endpoint:** [GET `/networks/{network}/dexes`](/api-reference/dexes/get-a-list-of-available-dexes-on-a-network)
+    
+    Gets all DEXes on a specific network.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network (e.g., 'ethereum', 'solana')
+    - `options` - Additional options:
+      - `page` - Page number for pagination (starts at 0)
+      - `limit` - Number of results per page
+    
+    **Returns:** DEX IDs, names, pool counts, and volume information. [Response Structure](/api-reference/dexes/get-a-list-of-available-dexes-on-a-network).
+    
+    ```php
+    // Get all DEXes on Ethereum
+    $dexes = $client->networks->getNetworkDexes('ethereum', ['limit' => 10]);
+    echo "Found {$dexes['dexes']} DEXes on Ethereum";
+    ```
+    
+    ### client->networks->findDex(networkId, dexId)
+    
+    Finds a specific DEX on a network by its ID.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `dexId`* - ID of the DEX to find
+    
+    **Returns:** The DEX information or null if not found.
+    
+    ```php
+    // Find Uniswap V3 on Ethereum
+    $dex = $client->networks->findDex('ethereum', 'uniswap-v3');
+    if ($dex) {
+        echo "Found DEX: {$dex['name']}";
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Pools" type="category">
+  <Expandable title="methods">
+    ### client->pools->getTopPools(options)
+    
+    **Endpoint:** [GET `/pools`](/api-reference/pools/get-top-x-pools)
+    
+    Gets top pools across all networks with pagination.
+    
+    **Parameters:**
+    - `options` - Additional options:
+      - `page` - Page number for pagination (starts at 0)
+      - `limit` - Number of results per page
+      - `orderBy` - Field to sort by ('volume_usd', 'liquidity_usd', etc.)
+      - `sort` - Sort direction ('asc' or 'desc')
+    
+    **Returns:** Paginated list of pool objects with pricing data. [Response Structure](/api-reference/pools/get-top-x-pools).
+    
+    ```php
+    // Get top 10 pools by volume
+    $topPools = $client->pools->getTopPools([
+        'limit' => 10, 
+        'orderBy' => 'volume_usd', 
+        'sort' => 'desc'
+    ]);
+    echo "Top pool: {$topPools['pools'][0]['dex_name']}";
+    ```
+    
+    ### client->pools->getNetworkPools(networkId, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools`](/api-reference/pools/get-top-x-pools-on-a-network)
+    
+    Gets pools on a specific network with pagination and sorting options.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `options` - Additional options:
+      - `page` - Page number for pagination (starts at 0)
+      - `limit` - Number of results per page
+      - `orderBy` - Field to sort by ('volume_usd', 'liquidity_usd', etc.)
+      - `sort` - Sort direction ('asc' or 'desc')
+    
+    **Returns:** Paginated list of pools for the given network. [Response Structure](/api-reference/pools/get-top-x-pools-on-a-network).
+    
+    ```php
+    // Get top 5 pools on Ethereum by volume
+    $pools = $client->pools->getNetworkPools('ethereum', [
+        'limit' => 5, 
+        'orderBy' => 'volume_usd', 
+        'sort' => 'desc'
+    ]);
+    echo "Found {$pools['pools']} pools on Ethereum";
+    ```
+    
+    ### client->pools->getDexPools(networkId, dexId, options)
+    
+    **Endpoint:** [GET `/networks/{network}/dexes/{dex}/pools`](/api-reference/pools/get-top-x-pools-on-a-networks-dex)
+    
+    Gets pools on a specific DEX within a network with pagination.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `dexId`* - ID of the DEX
+    - `options` - Additional options:
+      - `page` - Page number for pagination (starts at 0)
+      - `limit` - Number of results per page
+      - `orderBy` - Field to sort by ('volume_usd', 'liquidity_usd', etc.)
+      - `sort` - Sort direction ('asc' or 'desc')
+    
+    **Returns:** Paginated list of pools for the specified DEX. [Response Structure](/api-reference/pools/get-top-x-pools-on-a-networks-dex).
+    
+    ```php
+    // Get top 10 Uniswap V3 pools on Ethereum
+    $uniswapPools = $client->pools->getDexPools('ethereum', 'uniswap-v3', [
+        'limit' => 10, 
+        'orderBy' => 'volume_usd', 
+        'sort' => 'desc'
+    ]);
+    echo "Found {$uniswapPools['pools']} Uniswap V3 pools";
+    ```
+    
+    ### client->pools->getPoolDetails(networkId, poolAddress, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools/{pool_address}`](/api-reference/pools/get-a-pool-on-a-network)
+    
+    Gets detailed information about a specific pool.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `poolAddress`* - On-chain address of the pool
+    - `options` - Additional options:
+      - `inversed` - Whether to invert the price ratio (boolean)
+    
+    **Returns:** Detailed pool information including tokens, volumes, liquidity, and more. [Response Structure](/api-reference/pools/get-a-pool-on-a-network).
+    
+    ```php
+    // Get details for a specific pool (WETH/USDC on Uniswap V2)
+    $pool = $client->pools->getPoolDetails(
+        'ethereum', 
+        '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc', 
+        ['inversed' => false]
+    );
+    echo "Pool: {$pool['tokens'][0]['symbol']}/{$pool['tokens'][1]['symbol']}";
+    ```
+    
+    ### client->pools->getPoolTransactions(networkId, poolAddress, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools/{pool_address}/transactions`](/api-reference/pools/get-transactions-of-a-pool-on-a-network-paging-can-be-used-up-to-100-pages)
+    
+    Gets transaction history for a specific pool with pagination.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `poolAddress`* - On-chain address of the pool
+    - `options` - Additional options:
+      - `page` - Page number for pagination
+      - `limit` - Number of transactions per page
+      - `cursor` - Transaction ID used for cursor-based pagination
+    
+    **Returns:** List of transactions with details about tokens, amounts, and timestamps. [Response Structure](/api-reference/pools/get-transactions-of-a-pool-on-a-network-paging-can-be-used-up-to-100-pages).
+    
+    ```php
+    // Get the latest 20 transactions for a pool
+    $transactions = $client->pools->getPoolTransactions(
+        'ethereum',
+        '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc',
+        ['limit' => 20]
+    );
+    $latestTxTime = date('Y-m-d H:i:s', $transactions['transactions'][0]['block_timestamp']);
+    echo "Latest transaction: {$latestTxTime}";
+    ```
+    
+    ### client->pools->getPoolOHLCV(networkId, poolAddress, start, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools/{pool_address}/ohlcv`](/api-reference/pools/get-ohlcv-data-for-a-pool-pair)
+    
+    Gets OHLCV (Open, High, Low, Close, Volume) chart data for a pool.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `poolAddress`* - On-chain address of the pool
+    - `start`* - Start time (ISO date string, YYYY-MM-DD, or Unix timestamp)
+    - `options` - Additional options:
+      - `end` - End time (optional)
+      - `limit` - Number of data points to return
+      - `interval` - Time interval ('1m', '5m', '15m', '30m', '1h', '6h', '12h', '24h')
+      - `inversed` - Whether to invert the price ratio (boolean)
+    
+    **Returns:** Array of OHLCV data points for the specified time range and interval. [Response Structure](/api-reference/pools/get-ohlcv-data-for-a-pool-pair).
+    
+    ```php
+    // Get OHLCV data for the past 7 days with 1-hour intervals
+    $endDate = date('Y-m-d');
+    $startDate = date('Y-m-d', strtotime('-7 days'));
+    
+    $ohlcv = $client->pools->getPoolOHLCV(
+        'ethereum',
+        '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc',
+        $startDate,
+        [
+            'end' => $endDate,
+            'interval' => '1h',
+            'limit' => 168  // 24 * 7 hours
+        ]
+    );
+    
+    echo "Received {$ohlcv} OHLCV data points";
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Tokens" type="category">
+  <Expandable title="methods">
+    ### client->tokens->getTokenDetails(networkId, tokenAddress)
+    
+    **Endpoint:** [GET `/networks/{network}/tokens/{token_address}`](/api-reference/tokens/get-a-tokens-latest-data-on-a-network)
+    
+    Gets comprehensive token information.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `tokenAddress`* - Token contract address
+    
+    **Returns:** Token details including price, market cap, volume, and metadata. [Response Structure](/api-reference/tokens/get-a-tokens-latest-data-on-a-network).
+    
+    ```php
+    // Get WETH token details
+    $weth = $client->tokens->getTokenDetails(
+        'ethereum',
+        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+    );
+    echo "{$weth['name']} price: \${$weth['price_usd']}";
+    ```
+    
+    ### client->tokens->getTokenPools(networkId, tokenAddress, options)
+    
+    **Endpoint:** [GET `/networks/{network}/tokens/{token_address}/pools`](/api-reference/tokens/get-top-x-pools-for-a-token)
+    
+    Gets pools containing a specific token.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `tokenAddress`* - Token contract address
+    - `options` - Additional options:
+      - `page` - Page number for pagination (starts at 0)
+      - `limit` - Number of results per page
+      - `sort` - Sort direction ('asc' or 'desc')
+      - `orderBy` - Field to sort by ('volume_usd', 'price_usd', etc.)
+      - `address` - Optional second token address to filter for pairs with both tokens
+    
+    **Returns:** List of pools where the queried token is found. [Response Structure](/api-reference/tokens/get-top-x-pools-for-a-token).
+    
+    ```php
+    // Get WETH/USDC pools
+    $pools = $client->tokens->getTokenPools(
+        'ethereum',
+        '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',  // WETH
+        [
+            'limit' => 5, 
+            'orderBy' => 'volume_usd',
+            'sort' => 'desc',
+            'address' => '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'  // USDC
+        ]
+    );
+    
+    foreach ($pools['pools'] as $pool) {
+        echo "{$pool['dex_name']}: $" . number_format($pool['volume_usd'], 2) . " 24h volume\n";
+    }
+    ```
+    
+    ### client->tokens->findToken(networkId, tokenSymbol)
+    
+    Attempts to find a token by its symbol.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `tokenSymbol`* - Token symbol to search for
+    
+    **Returns:** Token details if found.
+    
+    ```php
+    // Find WETH token by symbol
+    try {
+        $token = $client->tokens->findToken('ethereum', 'WETH');
+        echo "Found token {$token['name']} at {$token['address']}";
+    } catch (Exception $e) {
+        echo "Token not found";
+    }
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Search" type="category">
+  <Expandable title="methods">
+    ### client->search->search(query)
+    
+    **Endpoint:** [GET `/search`](/api-reference/search/search-for-tokens-pools-and-dexes)
+    
+    Searches across tokens, pools, and DEXes using a query string.
+    
+    **Parameters:**
+    - `query`* - Search query string
+    
+    **Returns:** Matching entities from all categories (tokens, pools, DEXes). [Response Structure](/api-reference/search/search-for-tokens-pools-and-dexes).
+    
+    ```php
+    // Search for "ethereum" across all entities
+    $results = $client->search->search("ethereum");
+    
+    echo "Found {$results['summary']['total_tokens']} tokens\n";
+    echo "Found {$results['summary']['total_pools']} pools\n";
+    echo "Found {$results['summary']['total_dexes']} dexes\n";
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Stats" type="category">
+  <Expandable title="methods">
+    ### client->stats->getStats()
+    
+    **Endpoint:** [GET `/stats`](/api-reference/utils/retrieve-high-level-asset-statistics)
+    
+    Gets platform-wide statistics.
+    
+    **Parameters:** None
+    
+    **Returns:** Counts of chains, DEXes, pools, and tokens indexed. [Response Structure](/api-reference/utils/retrieve-high-level-asset-statistics).
+    
+    ```php
+    // Get platform statistics
+    $stats = $client->stats->getStats();
+    
+    echo "Total chains: {$stats['chains']}\n";
+    echo "Total DEXes: {$stats['dexes']}\n";
+    echo "Total pools: {$stats['pools']}\n";
+    echo "Total tokens: {$stats['tokens']}\n";
+    ```
+  </Expandable>
+</ResponseField>
+
+## Complete Example
+
+<Expandable title="example">
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use DexPaprika\Client;
+use DexPaprika\Exception\DexPaprikaApiException;
+
+function main() {
+    try {
+        // Initialize client
+        $client = new Client();
+        
+        // Get Ethereum network details
+        $networks = $client->networks->getNetworks();
+        $ethereum = null;
+        foreach ($networks['networks'] as $network) {
+            if ($network['id'] === 'ethereum') {
+                $ethereum = $network;
+                break;
+            }
+        }
+        echo "Found {$ethereum['display_name']} with {$ethereum['dexes_count']} DEXes\n";
+        
+        // Get WETH token details
+        $weth = $client->tokens->getTokenDetails(
+            'ethereum',
+            '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+        );
+        echo "{$weth['name']} price: \${$weth['price_usd']}\n";
+        
+        // Find WETH/USDC pools
+        $pools = $client->tokens->getTokenPools(
+            'ethereum',
+            '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',  // WETH
+            [
+                'limit' => 5, 
+                'orderBy' => 'volume_usd',
+                'sort' => 'desc',
+                'address' => '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'  // USDC
+            ]
+        );
+        
+        // Show top pools
+        echo "Top WETH/USDC pools:\n";
+        foreach ($pools['pools'] as $pool) {
+            echo "{$pool['dex_name']}: $" . number_format($pool['volume_usd'], 2) . " 24h volume\n";
+        }
+    } catch (DexPaprikaApiException $e) {
+        echo "API Error: {$e->getMessage()}\n";
+    } catch (Exception $e) {
+        echo "Error: {$e->getMessage()}\n";
+    }
+}
+
+main();
+```
+</Expandable>
+
+## Advanced Features
+
+### Error Handling
+
+<Expandable title="error handling">
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use DexPaprika\Client;
+use DexPaprika\Exception\DexPaprikaApiException;
+use DexPaprika\Exception\NotFoundException;
+use DexPaprika\Exception\RateLimitException;
+use DexPaprika\Exception\ServerException;
+use DexPaprika\Exception\NetworkException;
+
+// Basic error handling
+try {
+    $client = new Client();
+    $token = $client->tokens->getTokenDetails('ethereum', '0xinvalidaddress');
+} catch (NotFoundException $e) {
+    echo "Token not found: {$e->getMessage()}\n";
+} catch (RateLimitException $e) {
+    echo "Rate limit exceeded. Try again in: {$e->getRetryAfter()} seconds\n";
+} catch (ServerException $e) {
+    echo "Server error occurred: {$e->getMessage()}\n";
+} catch (NetworkException $e) {
+    echo "Network error: {$e->getMessage()}\n";
+} catch (DexPaprikaApiException $e) {
+    echo "API error: {$e->getMessage()} (Code: {$e->getCode()})\n";
+} catch (Exception $e) {
+    echo "General error: {$e->getMessage()}\n";
+}
+
+// The SDK automatically retries on these status codes:
+// 408 (Request Timeout), 429 (Too Many Requests),
+// 500, 502, 503, 504 (Server Errors)
+
+// Custom retry configuration
+use DexPaprika\Config;
+
+$config = new Config();
+$config->setMaxRetries(4);  // Number of retry attempts (default: 3)
+$config->setRetryDelays([100, 500, 1000, 5000]);  // Delay in milliseconds
+
+$client = new Client(null, null, false, $config);
+
+// All API requests will now use these retry settings
+try {
+    $networks = $client->networks->getNetworks();
+} catch (Exception $e) {
+    echo "Failed after multiple retries: {$e->getMessage()}\n";
+}
+```
+</Expandable>
+
+### Caching System
+
+<Expandable title="caching">
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use DexPaprika\Client;
+use DexPaprika\Cache\FilesystemCache;
+
+// The SDK includes built-in caching capabilities
+// Demonstration of cache behavior
+
+// Create a client with default cache (1 hour TTL)
+$client = new Client();
+$client->setupCache();
+
+// First call - hits the API
+$startTime = microtime(true);
+$networks = $client->networks->getNetworks();
+$firstCallTime = microtime(true) - $startTime;
+echo "First call (API): {$networks['networks']} networks, took {$firstCallTime} s\n";
+
+// Second call - served from cache (much faster)
+$startTime = microtime(true);
+$networks = $client->networks->getNetworks();
+$secondCallTime = microtime(true) - $startTime;
+echo "Second call (cached): {$networks['networks']} networks, took {$secondCallTime} s\n";
+echo "Cache speedup: {$firstCallTime / $secondCallTime} x\n";
+
+// You can skip the cache when you need fresh data
+$client->getConfig()->setCacheEnabled(false);
+$freshNetworks = $client->networks->getNetworks();
+$client->getConfig()->setCacheEnabled(true);
+
+// Custom cache configuration
+$cache = new FilesystemCache('/path/to/custom/cache');
+$client->setupCache($cache, 300);  // 5 minutes TTL
+
+// Clear the entire cache
+$client->getConfig()->getCache()->clear();
+```
+</Expandable>
+
+### Pagination Helper
+
+<Expandable title="pagination">
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use DexPaprika\Client;
+
+function fetchAllPools($networkId) {
+    $client = new Client();
+    $allPools = [];
+    $page = 0;
+    $limit = 50;
+    $hasMore = true;
+    
+    while ($hasMore) {
+        $response = $client->pools->getNetworkPools(
+            $networkId, 
+            [
+                'page' => $page, 
+                'limit' => $limit, 
+                'sort' => 'desc', 
+                'orderBy' => 'volume_usd'
+            ]
+        );
+        
+        $allPools = array_merge($allPools, $response['pools']);
+        
+        // Check if there are more pages
+        $hasMore = count($response['pools']) == $limit;
+        $page++;
+        
+        // Adding a small delay to avoid hitting rate limits
+        usleep(100000);  // 100ms
+    }
+    
+    echo "Fetched a total of {$allPools} pools on {$networkId}\n";
+    return $allPools;
+}
+
+// Alternative approach using built-in paginator
+function fetchAllPoolsWithPaginator($networkId) {
+    $client = new Client();
+    $allPools = [];
+    
+    // Create a paginator for network pools
+    $paginator = $client->createPaginator(
+        $client->pools,
+        'getNetworkPools',
+        [
+            $networkId,
+            [
+                'limit' => 50,
+                'orderBy' => 'volume_usd',
+                'sort' => 'desc'
+            ]
+        ]
+    );
+    
+    // Iterate through all pages (or up to a maximum)
+    $paginator->setMaxPages(10);  // Optional: limit to 10 pages
+    foreach ($paginator as $page => $response) {
+        $allPools = array_merge($allPools, $response['pools']);
+        echo "Processed page {$page}, got {$response['pools']} pools\n";
+    }
+    
+    echo "Fetched a total of {$allPools} pools on {$networkId}\n";
+    return $allPools;
+}
+
+// Usage example
+$ethereumPools = fetchAllPools('ethereum');
+// or
+$ethereumPools = fetchAllPoolsWithPaginator('ethereum');
+```
+</Expandable>
+
+### Working with Objects
+
+<Expandable title="objects">
+```php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use DexPaprika\Client;
+use DexPaprika\Config;
+
+// Create a client that returns objects instead of arrays
+$config = new Config();
+$config->setResponseFormat('object');
+$client = new Client(null, null, true, $config);
+
+// Get pool details
+$pool = $client->pools->getPoolDetails(
+    'ethereum',
+    '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640'  // USDC/WETH Uniswap v3 pool
+);
+
+// Access pool properties as object properties
+echo "Pool: {$pool->tokens[0]->symbol}/{$pool->tokens[1]->symbol}\n";
+echo "Volume (24h): \${$pool->day->volume_usd}\n";
+echo "Transactions (24h): {$pool->day->txns}\n";
+echo "Price: \${$pool->last_price_usd}\n";
+
+// Time interval data is available for multiple timeframes
+echo "1h price change: {$pool->hour1->last_price_usd_change}%\n";
+echo "24h price change: {$pool->day->last_price_usd_change}%\n";
+
+// Combining with array-based response for specific API calls
+$client->getConfig()->setResponseFormat('array');
+$networks = $client->networks->getNetworks();
+
+// Back to object mode
+$client->getConfig()->setResponseFormat('object');
+$token = $client->tokens->getTokenDetails('ethereum', '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2');
+echo "{$token->name} price: \${$token->price_usd}\n";
+```
+</Expandable>
+
+## Resources
+
+- [GitHub Repository](https://github.com/coinpaprika/dexpaprika-sdk-php)
+- [DexPaprika Website](https://dexpaprika.com)
+- [API Reference](/api-reference/introduction)
+- [Discord Community](https://discord.gg/DhJge5TUGM) 
+
+## API Status
+
+The DexPaprika API provides consistent data with stable endpoints. No API key is currently required to access the service. We aim to maintain backward compatibility and provide notice of any significant changes. 

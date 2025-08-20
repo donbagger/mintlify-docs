@@ -1,0 +1,284 @@
+---
+title: "Find New Crypto Pools and Token Launches"
+sidebarTitle: "New Pools API"
+description: "Discover newly created liquidity pools across 20+ blockchains. Perfect for finding new tokens, arbitrage opportunities, and emerging DeFi projects early."
+---
+
+<Info>
+  Hitting any snags? We've got your back - [reach out](mailto:support@coinpaprika.com) and we'll help you get this working.
+</Info>
+
+## Why Monitor New Pools?
+
+New liquidity pools are where the action happens in DeFi. They signal new token launches, liquidity migrations, and fresh trading opportunities. Being first to spot them can be a serious advantage.
+
+**What you can catch early:**
+- **New token launches** before they hit major trackers
+- **Arbitrage opportunities** between pools
+- **Liquidity migrations** to better DEXes
+- **Emerging projects** before they explode
+
+<Tip>
+  **TL;DR**: Jump to [Step 2](#step-2-get-newest-pools) if you want to start pulling new pools immediately.
+</Tip>
+
+---
+
+## Step 1: Pick Your Networks
+
+First, see what blockchains you want to monitor using the [Networks API](/api-reference/networks/get-a-list-of-available-blockchain-networks):
+
+```bash
+curl "https://api.dexpaprika.com/networks" | jq '.[] | {id: .id, name: .display_name}'
+```
+
+---
+
+## Step 2: Get Newest Pools
+
+Here's the money shot - getting pools sorted by creation date using the [Network Pools API](/api-reference/pools/get-top-x-pools-on-a-network):
+
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/pools?orderBy=created_at&sort=desc&limit=10" | jq
+```
+
+### What These Parameters Do:
+
+| Parameter | Effect | Pro Tip |
+|-----------|--------|---------|
+| `orderBy=created_at` | Sort by when pool was made | Only way to find truly new pools |
+| `sort=desc` | Newest first | Use `asc` for historical analysis |
+| `limit=10` | How many pools back | Max is 100, but 10-20 is usually enough |
+| `page=0` | Pagination | Increase for deeper history |
+
+### What You Get:
+
+```json
+{
+  "pools": [
+    {
+      "id": "0x462229e7fc9e6cab0ebbd643cc6dfef2a5261ee9",
+      "dex_name": "Uniswap V2",
+      "created_at": "2025-06-09T09:28:35Z",
+      "volume_usd": 767.17,
+      "transactions": 5,
+      "tokens": [
+        {
+          "symbol": "🧸TEDDYS",
+          "name": "🧸TeddySwap",
+          "fdv": 18769.56
+        },
+        {
+          "symbol": "WETH", 
+          "fdv": 6617036250.33
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Red flags to watch for:**
+- Crazy high FDV on new tokens (possible honeypot)
+- Zero transactions after hours (might be a test pool)
+
+---
+
+## Focus on Specific DEXes
+
+Want to monitor just Uniswap or Raydium? First get the DEX list using the [Network DEXes API](/api-reference/dexes/get-a-list-of-available-dexes-on-a-network):
+
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/dexes" | jq '.[] | {id: .id, name: .name}'
+```
+
+Then filter new pools by DEX using the [DEX Pools API](/api-reference/pools/get-top-x-pools-on-a-networks-dex):
+
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/dexes/uniswap_v3/pools?orderBy=created_at&sort=desc&limit=10" | jq
+```
+
+---
+
+## Multi-Chain Monitoring
+
+Real pros monitor multiple chains simultaneously. Here's how:
+
+### Ethereum
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/pools?orderBy=created_at&sort=desc&limit=5" | jq '.pools[] | {chain: "ethereum", pool: .id, created: .created_at, volume: .volume_usd, tokens: [.tokens[].symbol]}'
+```
+
+### Solana 
+```bash
+curl "https://api.dexpaprika.com/networks/solana/pools?orderBy=created_at&sort=desc&limit=5" | jq '.pools[] | {chain: "solana", pool: .id, created: .created_at, volume: .volume_usd, tokens: [.tokens[].symbol]}'
+```
+
+### Base
+```bash
+curl "https://api.dexpaprika.com/networks/base/pools?orderBy=created_at&sort=desc&limit=5" | jq '.pools[] | {chain: "base", pool: .id, created: .created_at, volume: .volume_usd, tokens: [.tokens[].symbol]}'
+```
+
+**Pro tip**: Use different limits based on chain activity. Solana might need `limit=20` because of memecoin amounts, while Ethereum `limit=5` catches the important stuff.
+
+---
+
+## Smart Filtering Strategies
+
+### Only High-Activity Pools
+Skip the dead pools - focus on ones with real trading:
+
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/pools?orderBy=created_at&sort=desc&limit=50" | jq '.pools[] | select(.volume_usd > 1000 and .transactions > 10) | {id: .id, created: .created_at, volume: .volume_usd, txns: .transactions}'
+```
+
+### Last 24 Hours Only
+Filter by timestamp to get super fresh pools:
+
+```bash
+# Get pools from last 24 hours (adjust date as needed)
+curl "https://api.dexpaprika.com/networks/ethereum/pools?orderBy=created_at&sort=desc&limit=100" | jq --arg yesterday "$(date -d '1 day ago' -Iseconds)" '.pools[] | select(.created_at > $yesterday) | {id: .id, age: .created_at, volume: .volume_usd}'
+```
+
+### New Token Launches
+Look for pools where the tokens themselves are brand new:
+
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/pools?orderBy=created_at&sort=desc&limit=20" | jq '.pools[] | select(.tokens[] | .added_at > "2025-01-25T00:00:00Z") | {pool: .id, pool_age: .created_at, new_tokens: [.tokens[] | select(.added_at > "2025-01-25T00:00:00Z") | .symbol]}'
+```
+
+---
+
+## Production Monitoring Setup
+
+### Simple Monitoring Script
+Here's a bash script that checks for new pools every 5 minutes:
+
+```bash
+#!/bin/bash
+
+# Monitor new pools across multiple chains
+CHAINS=("ethereum" "solana" "base")
+MIN_VOLUME=5000
+
+while true; do
+    echo "🔍 Checking for new pools at $(date)"
+    
+    for chain in "${CHAINS[@]}"; do
+        echo "--- $chain ---"
+        
+        # Get new pools with decent volume
+        curl -s "https://api.dexpaprika.com/networks/$chain/pools?orderBy=created_at&sort=desc&limit=10" | \
+        jq --argjson min_vol $MIN_VOLUME '.pools[] | select(.volume_usd > $min_vol) | {
+            pool_id: .id,
+            chain: "'$chain'",
+            created: .created_at,
+            volume: .volume_usd,
+            tokens: [.tokens[].symbol]
+        }'
+    done
+    
+    echo "⏰ Sleeping for 5 minutes..."
+    sleep 300
+done
+```
+
+### Alert on High-Volume New Pools
+Catch the big moves automatically:
+
+```bash
+# Check for new pools with serious volume
+NEW_POOLS=$(curl -s "https://api.dexpaprika.com/networks/ethereum/pools?orderBy=created_at&sort=desc&limit=20" | jq '.pools[] | select(.volume_usd > 50000)')
+
+if [ -n "$NEW_POOLS" ]; then
+    echo "🚨 HIGH VOLUME NEW POOL DETECTED!"
+    echo "$NEW_POOLS"
+    # Add your notification here (Discord webhook, Slack, email, etc.)
+    # curl -X POST "YOUR_DISCORD_WEBHOOK" -d "{\"content\": \"New high-volume pool: $NEW_POOLS\"}"
+fi
+```
+
+---
+
+## Troubleshooting Common Issues
+
+### "No New Pools Found"
+Check if you're looking at the right timeframe:
+```bash
+# See when the last pool was created
+curl "https://api.dexpaprika.com/networks/ethereum/pools?orderBy=created_at&sort=desc&limit=1" | jq '.pools[0].created_at'
+```
+
+### "Too Much Spam"
+Filter out low-quality pools:
+```bash
+# More restrictive filtering
+curl "https://api.dexpaprika.com/networks/solana/pools?orderBy=created_at&sort=desc&limit=50" | jq '.pools[] | select(.transactions > 20 and .volume_usd > 5000 and (.tokens[0].fdv < 100000000 or .tokens[1].fdv < 100000000))'
+```
+
+### "Missing Opportunities"
+You might need to check more frequently or cast a wider net:
+```bash
+# Check multiple DEXes on one chain
+for dex in uniswap_v3 uniswap_v2 sushiswap; do
+    echo "=== $dex ==="
+    curl -s "https://api.dexpaprika.com/networks/ethereum/dexes/$dex/pools?orderBy=created_at&sort=desc&limit=3" | jq '.pools[0] | {dex: "'$dex'", created: .created_at, tokens: [.tokens[].symbol]}'
+done
+```
+
+---
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card
+    title="Historical Price Data"
+    icon="chart-line"
+    href="/tutorials/retrieve-historical-data"
+  >
+    Analyze new pools with price history.
+  </Card>
+  <Card
+    title="Pool Transactions"
+    icon="exchange-alt"
+    href="/api-reference/pools/get-transactions-of-a-pool-on-a-network-paging-can-be-used-up-to-100-pages"
+  >
+    Monitor trading activity in real-time.
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card
+    title="Pool Details API"
+    icon="info-circle"
+    href="/api-reference/pools/get-a-pool-on-a-network"
+  >
+    Get comprehensive pool information and metadata.
+  </Card>
+  <Card
+    title="Search API"
+    icon="search"
+    href="/api-reference/search/search-for-tokens-pools-and-dexes"
+  >
+    Find pools, tokens, and DEXes across all networks.
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card
+    title="Developer Discord"
+    icon="discord"
+    href="https://discord.gg/DhJge5TUGM"
+  >
+    Share strategies and get help from other builders.
+  </Card>
+  <Card
+    title="Direct Support"
+    icon="message"
+    href="mailto:support@coinpaprika.com"
+  >
+    Stuck on something? We'll help you figure it out.
+  </Card>
+</CardGroup> 

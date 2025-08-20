@@ -1,0 +1,12 @@
+---
+openapi: get /networks/{network}/tokens/{token_address}
+description: "Retrieves detailed information about a specific token on the given
+        network, 
+
+        including latest price, metadata, status, and recent summary metrics
+        such as price changes 
+
+        and volumes over multiple timeframes.
+<Info> The `token_supply` is a raw integer. To get the actual supply, move the decimal point left by the `decimals` value. Example: supply = `raw_supply` / 10^`decimals` </Info>"
+---
+

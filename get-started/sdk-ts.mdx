@@ -1,0 +1,647 @@
+---
+title: 'DexPaprika SDK'
+sidebarTitle: 'Typescript SDK'
+description: 'JavaScript client library for accessing decentralized exchange data across multiple blockchain networks'
+---
+
+## Prerequisites
+
+- Node.js 14.0.0 or higher
+- Connection to the internet to access the DexPaprika API
+- No API key required
+
+## Installation
+
+Install the DexPaprika SDK using your preferred package manager:
+
+```bash
+# using npm
+npm install @dexpaprika/sdk
+
+# using yarn
+yarn add @dexpaprika/sdk
+
+# using pnpm
+pnpm add @dexpaprika/sdk
+```
+
+## Quick Example
+
+```javascript
+import { DexPaprikaClient } from '@dexpaprika/sdk';
+
+// Initialize the client
+const client = new DexPaprikaClient();
+
+// Get the price of Wrapped Ether (WETH) on Ethereum
+async function getWethPrice() {
+  const wethAddress = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+  const token = await client.tokens.getDetails('ethereum', wethAddress);
+  console.log(`Current WETH price: $${token.price_usd}`);
+}
+
+getWethPrice();
+```
+
+## API Methods Reference
+
+All API methods in the DexPaprika SDK follow a consistent pattern, accepting required parameters first, followed by an optional `options` object for additional configuration. This options pattern provides flexibility while keeping the API clean and easy to use.
+
+For example, most listing methods accept pagination and sorting options:
+
+```javascript
+// Get pools with custom pagination and sorting
+const pools = await client.pools.listByNetwork('ethereum', {
+  page: 0,       // start at first page
+  limit: 20,     // get 20 results
+  sort: 'desc',  // sort descending
+  orderBy: 'volume_usd' // sort by volume
+});
+```
+
+<ResponseField name="Networks" type="category">
+  <Expandable title="Network methods">
+    ### client.networks.list()
+    
+    **Endpoint:** [GET `/networks`](/api-reference/networks/get-networks)
+    
+    Retrieves all supported blockchain networks and their metadata.
+    
+    **Parameters:** None
+    
+    **Returns:** Array of network objects containing network ID, name, and other information.
+    
+    ```javascript
+    const networks = await client.networks.list();
+    console.log(`Supported networks: ${networks.length}`);
+    ```
+    
+    ---
+    
+    ### client.networks.getDexes(networkId, options)
+    
+    **Endpoint:** [GET `/networks/{network}/dexes`](/api-reference/networks/get-dexes-of-a-network)
+    
+    Retrieves all DEXes on a specific network.
+    
+    **Parameters:**
+    - `networkId`* - Network ID (e.g., "ethereum", "solana")
+    - `options` - Optional configuration:
+      - `page` - Page number for pagination
+      - `limit` - Number of DEXes per page
+    
+    **Returns:** Paginated list of DEX objects with name, ID, and metadata.
+    
+    ```javascript
+    const dexes = await client.networks.getDexes('ethereum', { limit: 20 });
+    dexes.data.forEach(dex => console.log(dex.name));
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="DEXes" type="category">
+  <Expandable title="DEX methods">
+    ### client.dexes.get(networkId, dexId)
+    
+    **Endpoint:** [GET `/networks/{network}/dexes/{dex}`](/api-reference/dexes/get-a-dex-on-a-network)
+    
+    Gets information about a specific DEX on a network.
+    
+    **Parameters:**
+    - `networkId`* - Network ID (e.g., "ethereum", "solana")
+    - `dexId`* - DEX identifier (e.g., "uniswap_v2")
+    
+    **Returns:** DEX details including name, website, API endpoints if available, and statistics.
+    
+    ```javascript
+    const dex = await client.dexes.get('ethereum', 'uniswap_v2');
+    console.log(`${dex.name} stats: Volume $${dex.volume_usd_24h}, Pools: ${dex.pool_count}`);
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Pools" type="category">
+  <Expandable title="Pool methods">
+    ### client.pools.list(options)
+    
+    **Endpoint:** [GET `/pools`](/api-reference/pools/get-top-x-pools)
+    
+    Gets top pools across all networks with pagination.
+    
+    **Parameters:**
+    - `options` - Options object for pagination and sorting:
+      - `page` - Page number for pagination
+      - `limit` - Number of pools per page
+      - `sort` - Sort direction ('asc' or 'desc')
+      - `orderBy` - Field to sort by ('volume_usd', 'price_usd', etc.)
+    
+    **Returns:** Paginated list of pool objects with pricing data.
+    
+    ```javascript
+    const pools = await client.pools.list({
+      limit: 10,
+      orderBy: 'volume_usd',
+      sort: 'desc'
+    });
+    
+    console.log(`Top pool: ${pools.data[0].token0.symbol}/${pools.data[0].token1.symbol}`);
+    ```
+    
+    ---
+    
+    ### client.pools.listByNetwork(networkId, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools`](/api-reference/pools/get-top-x-pools-on-a-network)
+    
+    Gets pools on a specific network with pagination and sorting options.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `options` - Options object for pagination and sorting:
+      - `page` - Page number for pagination
+      - `limit` - Number of pools per page
+      - `sort` - Sort direction ('asc' or 'desc')
+      - `orderBy` - Field to sort by ('volume_usd', 'price_usd', etc.)
+    
+    **Returns:** Paginated list of pools for the given network.
+    
+    ```javascript
+    const ethereumPools = await client.pools.listByNetwork('ethereum', {
+      limit: 5,
+      orderBy: 'volume_usd',
+      sort: 'desc'
+    });
+    
+    console.log(`Found ${ethereumPools.meta.total} pools on Ethereum`);
+    ```
+    
+    ---
+    
+    ### client.pools.listByDex(networkId, dexId, options)
+    
+    **Endpoint:** [GET `/networks/{network}/dexes/{dex}/pools`](/api-reference/pools/get-top-x-pools-on-a-networks-dex)
+    
+    Gets pools on a specific DEX within a network with pagination.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `dexId`* - ID of the DEX
+    - `options` - Options object for pagination and sorting:
+      - `page` - Page number for pagination
+      - `limit` - Number of pools per page
+      - `sort` - Sort direction ('asc' or 'desc')
+      - `orderBy` - Field to sort by ('volume_usd', 'price_usd', etc.)
+    
+    **Returns:** Paginated list of pools for the specified DEX.
+    
+    ```javascript
+    const uniswapPools = await client.pools.listByDex('ethereum', 'uniswap_v2', {
+      limit: 10,
+      orderBy: 'volume_usd',
+      sort: 'desc'
+    });
+    
+    console.log(`Top Uniswap V2 pool: ${uniswapPools.data[0].token0.symbol}/${uniswapPools.data[0].token1.symbol}`);
+    ```
+    
+    ---
+    
+    ### client.pools.getDetails(networkId, poolAddress, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools/{pool_address}`](/api-reference/pools/get-a-pool-on-a-network)
+    
+    Gets detailed information about a specific pool.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `poolAddress`* - On-chain address of the pool
+    - `options` - Options object:
+      - `inversed` - Whether to invert the price ratio (boolean)
+    
+    **Returns:** Detailed pool information including tokens, volumes, liquidity, and more.
+    
+    ```javascript
+    // Get details for a specific pool (WETH/USDC on Uniswap V2)
+    const pool = await client.pools.getDetails(
+      'ethereum', 
+      '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc',
+      { inversed: false }
+    );
+    console.log(`Pool: ${pool.token0.symbol}/${pool.token1.symbol}`);
+    ```
+    
+    ---
+    
+    ### client.pools.getTransactions(networkId, poolAddress, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools/{pool_address}/transactions`](/api-reference/pools/get-transactions-of-a-pool-on-a-network-paging-can-be-used-up-to-100-pages)
+    
+    Gets transaction history for a specific pool with pagination.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `poolAddress`* - On-chain address of the pool
+    - `options` - Options object for pagination:
+      - `page` - Page number for pagination
+      - `limit` - Number of transactions per page
+      - `cursor` - Transaction ID for cursor-based pagination
+    
+    **Returns:** List of transactions with details about tokens, amounts, and timestamps.
+    
+    ```javascript
+    // Get the latest 20 transactions for a pool
+    const transactions = await client.pools.getTransactions(
+      'ethereum',
+      '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc',
+      { limit: 20 }
+    );
+    
+    console.log(`Latest transaction: ${transactions.data[0].hash}`);
+    ```
+    
+    ---
+    
+    ### client.pools.getOHLCV(networkId, poolAddress, options)
+    
+    **Endpoint:** [GET `/networks/{network}/pools/{pool_address}/ohlcv`](/api-reference/pools/get-ohlcv-data-for-a-pool-pair)
+    
+    Gets OHLCV (Open, High, Low, Close, Volume) chart data for a pool.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `poolAddress`* - On-chain address of the pool
+    - `options`* - OHLCV options object:
+      - `start`* - Start time (ISO date string or timestamp)
+      - `end` - End time (optional)
+      - `limit` - Number of data points to return
+      - `interval` - Time interval ('1h', '6h', '24h', etc.)
+      - `inversed` - Whether to invert the price ratio (boolean)
+    
+    **Returns:** Array of OHLCV data points for the specified time range and interval.
+    
+    ```javascript
+    // Get hourly price data for the past week
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    
+    const ohlcvData = await client.pools.getOHLCV(
+      'ethereum',
+      '0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc',
+      {
+        start: startDate.toISOString(),
+        interval: '1h',
+        limit: 168 // 7 days * 24 hours
+      }
+    );
+    
+    console.log(`Data points: ${ohlcvData.length}`);
+    console.log(`Current price: ${ohlcvData[ohlcvData.length-1].close}`);
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Tokens" type="category">
+  <Expandable title="Token methods">
+    ### client.tokens.getDetails(networkId, tokenAddress)
+    
+    **Endpoint:** [GET `/networks/{network}/tokens/{token_address}`](/api-reference/tokens/get-a-token-on-a-network)
+    
+    Gets detailed information about a specific token on a network.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `tokenAddress`* - Token address or identifier
+    
+    **Returns:** Detailed token information including price, volume, and metadata.
+    
+    ```javascript
+    // Get details for WETH on Ethereum
+    const weth = await client.tokens.getDetails(
+      'ethereum',
+      '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+    );
+    
+    console.log(`${weth.name} (${weth.symbol}): $${weth.price_usd}`);
+    ```
+    
+    ---
+    
+    ### client.tokens.getPools(networkId, tokenAddress, options)
+    
+    **Endpoint:** [GET `/networks/{network}/tokens/{token_address}/pools`](/api-reference/tokens/get-token-pools-on-a-network)
+    
+    Gets a list of liquidity pools that include the specified token.
+    
+    **Parameters:**
+    - `networkId`* - ID of the network
+    - `tokenAddress`* - Token address or identifier
+    - `options` - Options object for filtering, pagination and sorting:
+      - `page` - Page number for pagination
+      - `limit` - Number of pools per page
+      - `sort` - Sort direction ('asc' or 'desc')
+      - `orderBy` - Field to sort by ('volume_usd', 'liquidity_usd', etc.)
+      - `pairWith` - Optional second token address to filter for specific pairs
+    
+    **Returns:** Paginated list of pools containing the specified token.
+    
+    ```javascript
+    // Find WETH/USDC pools on Ethereum
+    const wethAddress = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+    const usdcAddress = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+    
+    const pools = await client.tokens.getPools(
+      'ethereum',
+      wethAddress,
+      {
+        limit: 5,
+        orderBy: 'volume_usd',
+        sort: 'desc',
+        pairWith: usdcAddress
+      }
+    );
+    
+    pools.data.forEach(pool => {
+      console.log(`${pool.dex.name}: $${pool.volume_usd_24h} 24h volume`);
+    });
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Search" type="category">
+  <Expandable title="Search methods">
+    ### client.search.search(query)
+    
+    **Endpoint:** [GET `/search`](/api-reference/search/search-for-tokens-pools-and-dexes)
+    
+    Searches for tokens, pools, and DEXes by name or identifier.
+    
+    **Parameters:**
+    - `query`* - Search term (e.g., "uniswap", "bitcoin", or a token address)
+    
+    **Returns:** Search results organized by category (tokens, pools, DEXes).
+    
+    ```javascript
+    // Search for "ethereum"
+    const results = await client.search.search('ethereum');
+    
+    console.log(`Found ${results.tokens.length} tokens`);
+    console.log(`Found ${results.pools.length} pools`);
+    console.log(`Found ${results.dexes.length} DEXes`);
+    ```
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="Utils" type="category">
+  <Expandable title="Utility methods">
+    ### client.utils.getStats()
+    
+    **Endpoint:** [GET `/stats`](/api-reference/utils/get-stats)
+    
+    Gets high-level statistics about the DexPaprika ecosystem.
+    
+    **Parameters:** None
+    
+    **Returns:** Statistics about chains, DEXes, pools, and tokens.
+    
+    ```javascript
+    const stats = await client.utils.getStats();
+    
+    console.log(`Networks: ${stats.networks}`);
+    console.log(`DEXes: ${stats.dexes}`);
+    console.log(`Pools: ${stats.pools}`);
+    console.log(`Tokens: ${stats.tokens}`);
+    ```
+  </Expandable>
+</ResponseField>
+
+## Complete Example
+
+<Expandable title="example">
+```javascript
+import { DexPaprikaClient } from '@dexpaprika/sdk';
+
+async function main() {
+  // Initialize client
+  const client = new DexPaprikaClient();
+  
+  // Get Ethereum network details
+  const networks = await client.networks.list();
+  const ethereum = networks.find(n => n.id === 'ethereum');
+  console.log(`Found ${ethereum.name} with ${ethereum.dexes_count} DEXes`);
+  
+  // Get WETH token details
+  const weth = await client.tokens.getDetails(
+    'ethereum',
+    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+  );
+  console.log(`${weth.name} price: $${weth.price_usd}`);
+  
+  // Find WETH/USDC pools
+  const pools = await client.tokens.getPools(
+    'ethereum',
+    '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // WETH
+    {
+      limit: 5,
+      sort: 'desc',
+      orderBy: 'volume_usd',
+      pairWith: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' // USDC
+    }
+  );
+  
+  // Show top pools
+  console.log('Top WETH/USDC pools:');
+  pools.data.forEach(pool => {
+    console.log(`${pool.dex.name}: $${pool.volume_usd_24h.toLocaleString()} 24h volume`);
+  });
+}
+
+main().catch(console.error);
+```
+</Expandable>
+
+## Advanced Features
+
+### Error Handling
+
+<Expandable title="error handling">
+```javascript
+import { DexPaprikaClient, parseError } from '@dexpaprika/sdk';
+
+// Basic error handling
+try {
+  const client = new DexPaprikaClient();
+  const token = await client.tokens.getDetails('ethereum', '0xinvalidaddress');
+} catch (error) {
+  // Using the helper to extract the most relevant error message
+  console.error('Error:', parseError(error));
+  
+  // Or handle specific error cases manually
+  if (error.response?.status === 404) {
+    console.error('Resource not found');
+  } else if (error.response?.status === 429) {
+    console.error('Rate limit exceeded');
+  }
+}
+
+// The SDK automatically retries on these status codes: 
+// 408 (Request Timeout), 429 (Too Many Requests), 
+// 500, 502, 503, 504 (Server Errors)
+
+// Custom retry configuration
+const client = new DexPaprikaClient('https://api.dexpaprika.com', {}, {
+  retry: {
+    maxRetries: 3,
+    delaySequenceMs: [200, 500, 1000],
+    retryableStatuses: [429, 500, 503]
+  }
+});
+```
+</Expandable>
+
+### Caching
+
+<Expandable title="caching">
+```javascript
+import { DexPaprikaClient, Cache } from '@dexpaprika/sdk';
+
+// The SDK includes built-in caching by default
+// This example shows how to configure it
+
+// Configure caching with custom settings
+const client = new DexPaprikaClient('https://api.dexpaprika.com', {}, {
+  cache: {
+    ttl: 60 * 1000, // 1 minute cache TTL (default is 5 minutes)
+    maxSize: 100,   // Store up to 100 responses (default is 1000)
+    enabled: true   // Enable caching (enabled by default)
+  }
+});
+
+// Demonstration of cache behavior
+async function demonstrateCaching() {
+  console.time('First call');
+  await client.networks.list(); // Makes an API request
+  console.timeEnd('First call');
+  
+  console.time('Second call');
+  await client.networks.list(); // Returns cached result
+  console.timeEnd('Second call');
+  
+  // You can also manage the cache manually
+  client.clearCache();                // Clear all cached data
+  console.log(client.cacheSize);      // Get current cache size
+  client.setCacheEnabled(false);      // Disable caching
+}
+
+// Using the Cache class directly
+const manualCache = new Cache({ 
+  ttl: 30 * 1000,  // 30 second TTL
+  maxSize: 50      // Store maximum 50 items
+});
+
+manualCache.set('myKey', { data: 'example data' });
+const data = manualCache.get('myKey');
+manualCache.delete('myKey');
+manualCache.clear();
+```
+</Expandable>
+
+### Pagination Helper
+
+<Expandable title="pagination">
+```javascript
+import { DexPaprikaClient } from '@dexpaprika/sdk';
+
+async function fetchAllPools(networkId) {
+  const client = new DexPaprikaClient();
+  const allPools = [];
+  let page = 0;
+  const limit = 50;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const response = await client.pools.listByNetwork(
+      networkId, 
+      {
+        page,
+        limit,
+        sort: 'desc',
+        orderBy: 'volume_usd'
+      }
+    );
+    
+    allPools.push(...response.data);
+    
+    // Check if there are more pages
+    hasMore = response.data.length === limit;
+    page++;
+    
+    // Adding a small delay to avoid hitting rate limits
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  console.log(`Fetched a total of ${allPools.length} pools on ${networkId}`);
+  return allPools;
+}
+
+// Usage example
+fetchAllPools('ethereum').catch(console.error);
+```
+</Expandable>
+
+### Custom Configuration
+
+<Expandable title="configuration">
+```javascript
+import { DexPaprikaClient } from '@dexpaprika/sdk';
+import axios from 'axios';
+
+// Create a custom axios instance
+const axiosInstance = axios.create({
+  timeout: 60000, // 60 second timeout
+  headers: {
+    'User-Agent': 'MyApp/1.0 DexPaprikaSDK'
+  }
+});
+
+// Create client with custom configuration
+const client = new DexPaprikaClient(
+  'https://api.dexpaprika.com', // Base URL (optional)
+  axiosInstance,                // Custom axios instance (optional)
+  {
+    // Retry configuration (optional)
+    retry: {
+      maxRetries: 5,
+      delaySequenceMs: [100, 500, 1000, 2000, 5000],
+      retryableStatuses: [429, 500, 502, 503, 504]
+    },
+    
+    // Cache configuration (optional)
+    cache: {
+      ttl: 10 * 60 * 1000, // 10 minutes TTL
+      maxSize: 500,        // Store up to 500 responses
+      enabled: true        // Enable caching
+    }
+  }
+);
+
+// Usage example
+async function fetchWithCustomClient() {
+  try {
+    const networks = await client.networks.list();
+    console.log(`Fetched ${networks.length} networks with custom client`);
+  } catch (err) {
+    console.error('Error:', err);
+  }
+}
+```
+</Expandable>
+
+## Resources
+
+- [GitHub Repository](https://github.com/coinpaprika/dexpaprika-sdk-js)
+- [DexPaprika Website](https://dexpaprika.com)
+- [API Reference](/api-reference/introduction)
+
+## API Status
+
+The DexPaprika API provides consistent data with stable endpoints. No API key is currently required to access the service. We aim to maintain backward compatibility and provide notice of any significant changes.

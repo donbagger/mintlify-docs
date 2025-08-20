@@ -1,33 +1,144 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'Getting Started'
+sidebarTitle: "Introduction"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+The DexPaprika DEX API provides near real-time data about tokens, liquidity pools, and decentralized exchanges on over 18 blockchains. Below you can find the most popular endpoints that you can use to build your own applications:
 
-## Welcome
+<CardGroup cols={3}>
+  <Card 
+    title="Tokens" 
+    icon="coins"
+    href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network"
+  >
+    Get detailed information about any token on a given network like latest price, liquidity, and trading volume
+  </Card>
+  <Card
+    title="Pools"
+    icon="water"
+    href="/api-reference/pools/get-a-pool-on-a-network"
+  >
+    Access liquidity pool data and trading statistics for a given pool address
+  </Card>
+  <Card
+    title="Search"
+    icon="magnifying-glass"
+    href="/api-reference/search/search-for-tokens-pools-and-dexes"
+  >
+    Search for tokens, pools, and DEXes
+  </Card>
+</CardGroup>
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
-
-## Authentication
-
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
-
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+## Quick Start
+We will make a GET request to the [Token](/api-reference/tokens/get-a-tokens-latest-data-on-a-network) endpoint in order to get the latest price in USD of TRUMP. All we need is the [network ID](/api-reference/networks/get-a-list-of-available-blockchain-networks) and the token address.
+```bash
+curl -X GET "https://api.dexpaprika.com/networks/solana/tokens/6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
 ```
+
+This will return latest data about TRUMP (TRUMP) on Solana:
+
+```json Response [expandable]
+{
+  "id": "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN",
+  "name": "OFFICIAL TRUMP",
+  "symbol": "TRUMP",
+  "chain": "solana",
+  "decimals": 6,
+  "total_supply": 1000000000000000,
+  "description": "",
+  "website": "",
+  "explorer": "",
+  "added_at": "2025-01-17T23:26:21Z",
+  "summary": {
+    "price_usd": 13.14091959123721,
+    "fdv": 13140919591.23721,
+    "liquidity_usd": 149423162.71562782,
+    "24h": {
+      "volume": 21068441.593753017,
+      "volume_usd": 281073979.6428536,
+      "sell": 64806,
+      "buy": 69661,
+      "txns": 134467
+    },
+    "6h": {
+      "volume": 3947009.6413350017,
+      "volume_usd": 51291873.69781224,
+      "sell": 15636,
+      "buy": 16434,
+      "txns": 32070
+    },
+    "1h": {
+      "volume": 412765.81969400006,
+      "volume_usd": 5443526.242503976,
+      "sell": 1965,
+      "buy": 1934,
+      "txns": 3899
+    },
+    "30m": {
+      "volume": 138223.89740200003,
+      "volume_usd": 1826042.0489568561,
+      "sell": 666,
+      "buy": 942,
+      "txns": 1608
+    },
+    "15m": {
+      "volume": 102904.73769500002,
+      "volume_usd": 1356865.0163336615,
+      "sell": 499,
+      "buy": 634,
+      "txns": 1133
+    },
+    "5m": {
+      "volume": 16003.968976,
+      "volume_usd": 210782.49285099082,
+      "sell": 77,
+      "buy": 155,
+      "txns": 232
+    }
+  },
+  "last_updated": "2025-02-25T13:42:32.093353071Z"
+}
+```
+
+## Base URL
+
+All API endpoints use the following base URL:
+
+```
+https://api.dexpaprika.com/
+```
+
+
+## Common Use Cases
+
+Here are some popular ways to use our API:
+
+<AccordionGroup>
+  <Accordion title="Track Token Prices">
+    ```bash
+    # Get USDC price and trading data
+    curl -X GET "https://api.dexpaprika.com/networks/solana/tokens/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+    ```
+  </Accordion>
+  <Accordion title="Monitor Liquidity Pools">
+    ```bash
+    # Get all pools where SOL is traded
+    curl -X GET "https://api.dexpaprika.com/networks/solana/tokens/So11111111111111111111111111111111111111112/pools"
+    ```
+  </Accordion>
+  <Accordion title="Search Tokens">
+    ```bash
+    # Search for "Jupiter" token
+    curl -X GET "https://api.dexpaprika.com/networks/solana/search?query=jupiter"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Rate Limits
+
+The API is free to use with a rate limit of:
+- 10,000 requests per day
+
+<Note>
+  Need higher limits? [Contact us](mailto:support@dexpaprika.com) to discuss enterprise options.
+</Note>

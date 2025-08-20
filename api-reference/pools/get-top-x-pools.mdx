@@ -1,0 +1,30 @@
+---
+openapi: get /pools
+---
+
+<Warning>
+  **This endpoint has been deprecated and will return a `410 Gone` error.**
+  
+  Please use [`/networks/{network}/pools`](/api-reference/pools/get-top-x-pools-on-a-network) instead to get top pools for each specific blockchain network.
+  
+  ### Migration Examples:
+  
+  Instead of:
+  ```bash
+  curl -X GET "https://api.dexpaprika.com/pools"
+  ```
+  
+  Use network-specific endpoints:
+  ```bash
+  # Get top pools on Ethereum
+  curl -X GET "https://api.dexpaprika.com/networks/ethereum/pools"
+  
+  # Get top pools on Solana  
+  curl -X GET "https://api.dexpaprika.com/networks/solana/pools"
+  
+  # Get top pools on Fantom
+  curl -X GET "https://api.dexpaprika.com/networks/fantom/pools"
+  ```
+  
+  This change provides better performance and more relevant, network-specific results.
+</Warning>

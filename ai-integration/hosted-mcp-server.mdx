@@ -1,0 +1,375 @@
+---
+title: 'DexPaprika Hosted MCP Server'
+sidebarTitle: "Hosted MCP Server"
+description: 'Access real-time DeFi data in Claude, Cursor, and other MCP-compatible tools without any installation or setup. Our hosted MCP server provides instant access to comprehensive DEX data across 20+ blockchains.'
+---
+
+<Info>
+  Having trouble connecting? We're here to help - [reach out](mailto:support@coinpaprika.com) and we'll get you up and running.
+</Info>
+
+## Why use our hosted MCP server?
+
+Skip the installation hassle and get instant access to comprehensive DeFi data. Our hosted MCP server eliminates setup complexity while providing enterprise-grade reliability and performance.
+
+**What you get instantly:**
+- **Zero setup required** - just add the URL to your config
+- **Multiple transport options** - SSE, streamable HTTP, and JSON-RPC support
+- **Always up-to-date** - we handle updates and maintenance
+- **Enterprise reliability** - High availability and performance
+- **Real-time data** - live prices, volumes, and pool information
+- **20+ blockchain networks** - Ethereum, Solana, Base, Arbitrum, and more
+
+<Note>
+  Visit [mcp.dexpaprika.com](https://mcp.dexpaprika.com) to explore our hosted MCP server interface and see the available data before integrating.
+</Note>
+
+---
+
+## Quick integration guide
+
+### Claude desktop setup
+
+Add our hosted MCP server to Claude Desktop in just 2 steps:
+
+<Steps>
+<Step title="Locate your configuration file">
+Find your Claude Desktop configuration file:
+- **macOS**: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
+</Step>
+
+<Step title="Add the hosted server configuration">
+If the file doesn't exist, create it with this content:
+```json
+{
+  "mcpServers": {
+    "dexpaprika": {
+      "url": "https://mcp.dexpaprika.com/sse"
+    }
+  }
+}
+```
+
+If the file already exists, add our server to the existing `mcpServers` object:
+```json
+{
+  "mcpServers": {
+    "dexpaprika": {
+      "url": "https://mcp.dexpaprika.com/sse"
+    }
+  }
+}
+```
+
+Save the file and restart Claude Desktop. You're ready to go!
+</Step>
+</Steps>
+
+### Cursor setup
+
+<Steps>
+<Step title="Access MCP settings">
+1. Open Cursor IDE
+2. Go to **Settings** (Cmd/Ctrl + ,)
+3. Navigate to **Tools & Integrations**
+4. Click **New MCP server**
+</Step>
+
+<Step title="Configure in mcp.json">
+This will open the `mcp.json` file. Add the DexPaprika server configuration:
+
+```json
+{
+  "mcpServers": {
+    "dexpaprika": {
+      "url": "https://mcp.dexpaprika.com/sse"
+    }
+  }
+}
+```
+
+Save the file and restart Cursor if needed.
+</Step>
+</Steps>
+
+### ChatGPT integration
+
+Want to use DexPaprika data in ChatGPT? You can integrate our API directly into ChatGPT using Actions:
+
+1. **Create a custom GPT** in ChatGPT (requires Plus or Enterprise subscription)
+2. **Add our OpenAPI specification** from [mcp.dexpaprika.com/openapi](https://mcp.dexpaprika.com/openapi)
+3. **Start asking crypto questions** directly in your ChatGPT conversations
+
+<Note>
+  **Ready to set up ChatGPT?** Follow our complete [ChatGPT Actions integration guide](/ai-integration/chatgpt-actions) for step-by-step instructions.
+</Note>
+
+---
+
+## Connection options
+
+Our hosted MCP server supports multiple transport protocols to ensure compatibility with different clients and use cases:
+
+<AccordionGroup>
+<Accordion title="Server-sent events (SSE) - Recommended">
+**Endpoint:** `https://mcp.dexpaprika.com/sse`
+
+**Best for:** Claude Desktop, Cursor, and most MCP clients  
+**Benefits:** Real-time streaming updates, excellent browser compatibility, automatic reconnection  
+**Use cases:** Live price monitoring, real-time pool updates, continuous market data feeds
+
+This is the recommended option for most users as it provides the smoothest experience with popular AI tools.
+</Accordion>
+
+<Accordion title="Streamable HTTP">
+**Endpoint:** `https://mcp.dexpaprika.com/streamable-http`
+
+**Best for:** Custom applications, web services, and clients that prefer HTTP streaming  
+**Benefits:** Standard HTTP protocol, works well with firewalls, easier debugging  
+**Use cases:** Integration with existing web infrastructure, corporate environments with strict network policies
+
+Perfect for developers building custom integrations or working in environments where SSE might be restricted.
+</Accordion>
+
+<Accordion title="JSON-RPC over HTTP">
+**Endpoint:** `https://mcp.dexpaprika.com/json-rpc`
+
+**Best for:** Traditional API integrations, batch processing, simple request-response patterns  
+**Benefits:** Familiar REST-like interface, stateless communication, easy to cache  
+**Use cases:** Periodic data fetching, batch analysis, integration with existing JSON-RPC systems
+
+Ideal for applications that don't need real-time updates and prefer traditional API communication patterns.
+</Accordion>
+</AccordionGroup>
+
+<Tip>
+  **Getting started?** Use the SSE endpoint (`https://mcp.dexpaprika.com/sse`) for the best experience with Claude Desktop and Cursor. You can always switch protocols later based on your specific needs.
+</Tip>
+
+<Note>
+  **Need help choosing?** Visit [mcp.dexpaprika.com](https://mcp.dexpaprika.com) to test different connection methods and see which works best for your setup.
+</Note>
+
+---
+
+## Available features
+
+Our hosted MCP server provides comprehensive access to DeFi data:
+
+### Core data access
+- **Multi-chain support** - 20+ blockchain networks including Ethereum, Solana, Base, Arbitrum, Polygon, and more
+- **Real-time prices** - Live token prices and market data
+- **Liquidity pools** - Detailed pool information, volumes, and fees
+- **DEX analytics** - Trading data across major decentralized exchanges
+- **Search functionality** - Find tokens, pools, and DEXes across all networks
+
+### Advanced analytics
+- **Historical data** - Price history and trading volumes over time
+- **Pool monitoring** - Track new pool creation and liquidity changes
+- **Cross-chain comparisons** - Compare prices and liquidity across different networks
+- **Volume analysis** - Trading volume trends and patterns
+
+---
+
+## Usage examples
+
+Once configured, you can ask Claude or Cursor powerful questions about DeFi data:
+
+### Example queries you can make
+
+| Category | Example Query |
+|----------|---------------|
+| **Basic market data** | "What are the top 5 liquidity pools by volume today?" |
+| **Network information** | "Which blockchain networks does DexPaprika support?" |
+| **Token prices** | "What's the current price of SOL across different DEXes?" |
+| **Pool analysis** | "Show me the most liquid USDC/ETH pools across all networks and compare their trading fees" |
+| **New opportunities** | "Find newly created liquidity pools in the last 24 hours with volume over $100k" |
+| **Cross-chain comparison** | "Compare ETH prices between Ethereum mainnet and Layer 2 solutions like Arbitrum and Base" |
+| **DEX performance** | "Which DEX has the highest trading volume on Solana today?" |
+| **Token discovery** | "Search for meme tokens with high trading volume in the last hour" |
+| **Arbitrage opportunities** | "Find price differences for USDC across different DEXes on Ethereum" |
+
+<Tip>
+  **Want to explore more?** Visit [mcp.dexpaprika.com](https://mcp.dexpaprika.com) to test the interface, check out our [tutorials](/tutorials/tutorial_intro) for step-by-step guides, or browse the [API documentation](/api-reference/introduction) for technical details.
+</Tip>
+
+---
+
+## Benefits over self-hosted solutions
+
+| Feature | Hosted MCP | Self-Hosted MCP |
+|---------|------------|-----------------|
+| **Setup time** | < 2 minutes | 15-30 minutes |
+| **Maintenance** | Zero - we handle it | Regular updates required |
+| **Reliability** | High availability | Depends on your infrastructure |
+| **Performance** | Optimized hosting | Limited by your server |
+| **Updates** | Automatic | Manual intervention |
+| **Support** | Professional support | Community only |
+
+---
+
+## Troubleshooting
+
+### Common issues and solutions
+
+<AccordionGroup>
+<Accordion title="Server not responding or connection timeout">
+**Symptoms**: Claude shows connection errors or timeouts when making requests.
+
+**Solutions**:
+1. Check your internet connection
+2. Restart Claude Desktop/Cursor
+3. Verify the configuration syntax in your config file
+4. Try removing and re-adding the server configuration
+</Accordion>
+
+<Accordion title="Configuration file not found">
+**Symptoms**: Can't locate the Claude Desktop configuration file.
+
+**Solutions**:
+1. Create the directories if they don't exist:
+   - **macOS**: `mkdir -p ~/Library/Application\ Support/Claude/`
+   - **Windows**: Create the `Claude` folder in your `%APPDATA%` directory
+2. Create the `claude_desktop_config.json` file manually
+3. Ensure proper JSON syntax
+</Accordion>
+
+<Accordion title="MCP server not listed in Claude">
+**Symptoms**: The DexPaprika server doesn't appear in Claude's available tools.
+
+**Solutions**:
+1. Verify JSON syntax in your configuration file
+2. Restart Claude Desktop completely
+3. Check that the server URL is correct: `https://mcp.dexpaprika.com/sse`
+4. Try removing and re-adding the server configuration
+</Accordion>
+
+<Accordion title="Rate limiting or API errors">
+**Symptoms**: Getting rate limit errors or API failures.
+
+**Solutions**:
+1. Our hosted service includes built-in rate limiting protection
+2. If you're hitting limits, contact support for assistance
+3. Try spacing out your requests if making many in quick succession
+</Accordion>
+</AccordionGroup>
+
+---
+
+## API coverage
+
+Our hosted MCP server provides access to all DexPaprika API endpoints:
+
+<CardGroup cols={2}>
+  <Card
+    title="Networks & DEXes"
+    icon="network-wired"
+    href="/api-reference/networks/get-a-list-of-available-blockchain-networks"
+  >
+    Access all supported blockchain networks and their available decentralized exchanges
+  </Card>
+  <Card
+    title="Liquidity Pools"
+    icon="water"
+    href="/api-reference/pools/get-top-x-pools-on-a-network"
+  >
+    Comprehensive pool data including TVL, volume, fees, and token pairs
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card
+    title="Token Information"
+    icon="coins"
+    href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network"
+  >
+    Real-time token prices, market data, and detailed token information
+  </Card>
+  <Card
+    title="Historical Data"
+    icon="chart-line"
+    href="/api-reference/pools/get-ohlcv-data-for-a-pool-pair"
+  >
+    Price history, volume trends, and historical pool performance
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card
+    title="Search & Discovery"
+    icon="magnifying-glass"
+    href="/api-reference/search/search-for-tokens-pools-and-dexes"
+  >
+    Powerful search across tokens, pools, and DEXes with filtering options
+  </Card>
+  <Card
+    title="Real-time Updates"
+    icon="bolt"
+    href="/api-reference/introduction"
+  >
+    Live data feeds with the latest market information and trading activity
+  </Card>
+</CardGroup>
+
+---
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card
+    title="API Documentation"
+    icon="book-open"
+    href="/api-reference/introduction"
+  >
+    Explore all available data endpoints and their capabilities
+  </Card>
+  <Card
+    title="Find New Pools"
+    icon="plus-circle"
+    href="/tutorials/find-new-pools"
+  >
+    Learn how to discover newly created liquidity pools and tokens
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card
+    title="Self-Hosted Option"
+    icon="server"
+    href="/ai-integration/mcp"
+  >
+    Want to run your own MCP server? Check out our self-hosted guide
+  </Card>
+  <Card
+    title="Historical Data"
+    icon="clock"
+    href="/tutorials/retrieve-historical-data"
+  >
+    Access and analyze historical price and volume data
+  </Card>
+</CardGroup>
+
+## Need help?
+
+<CardGroup cols={2}>
+  <Card
+    title="Join Our Discord"
+    icon="discord"
+    href="https://discord.gg/DhJge5TUGM"
+  >
+    Connect with our community and get real-time support from other builders
+  </Card>
+  <Card
+    title="Direct Support"
+    icon="envelope"
+    href="mailto:support@coinpaprika.com"
+  >
+    Reach out directly for technical support or feature requests
+  </Card>
+</CardGroup>
+
+<Note>
+  **Looking for custom integrations?** Our team can help you integrate DexPaprika data into any application or workflow. [Contact us](mailto:support@coinpaprika.com) to discuss your specific needs.
+</Note> 

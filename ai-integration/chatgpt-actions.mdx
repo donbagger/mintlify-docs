@@ -1,0 +1,199 @@
+---
+title: 'ChatGPT Actions integration'
+sidebarTitle: "ChatGPT Actions - Integration Guide"
+description: 'Integrate DexPaprika data with ChatGPT using OpenAPI actions for real-time crypto and DeFi data access directly in your conversations.'
+---
+
+## What are ChatGPT Actions?
+
+ChatGPT Actions allow you to connect ChatGPT to external APIs, enabling it to retrieve real-time data and perform actions beyond its training data. With DexPaprika's ChatGPT Actions integration, you can access live cryptocurrency and DeFi data directly within your ChatGPT conversations.
+
+<Note>
+  **Ready-to-use OpenAPI URL:** Visit [mcp.dexpaprika.com/openapi](https://mcp.dexpaprika.com/openapi) to get the pre-configured OpenAPI specification URL for immediate use with ChatGPT Actions.
+</Note>
+
+## Prerequisites
+
+- **ChatGPT Plus or Enterprise subscription** - Actions are only available for paid ChatGPT users
+- Access to **ChatGPT's custom GPT creation** interface
+- Basic understanding of API integrations (helpful but not required)
+
+---
+
+## Step-by-Step setup guide
+
+### Step 1: Create a new Custom GPT
+
+1. **Log in to ChatGPT** and navigate to your dashboard
+2. **Click "Explore"** in the sidebar
+3. **Select "Create a GPT"** from the top of the page
+4. **Choose "Configure"** tab for manual setup
+
+### Step 2: Configure your GPT
+
+Fill in the basic information for your custom GPT:
+
+- **Name**: `DexPaprika Crypto Assistant`
+- **Description**: `Get real-time cryptocurrency and DeFi data across 20+ blockchain networks`
+- **Instructions**: 
+```
+You are a cryptocurrency and DeFi data assistant powered by DexPaprika. You can access real-time data about:
+- Blockchain networks and their supported DEXes
+- Liquidity pools and their metrics (TVL, volume, fees)
+- Token prices and market data
+- DEX trading activity and analytics
+- Cross-chain comparisons and analysis
+
+Always provide accurate, up-to-date information and explain complex DeFi concepts clearly. When showing pool data, include relevant metrics like TVL, 24h volume, and fee tiers when available.
+```
+
+### Step 3: Add the DexPaprika Action
+
+1. **Scroll down to the "Actions" section**
+2. **Click "Create new action"**
+3. **Get the OpenAPI URL** from [mcp.dexpaprika.com/openapi](https://mcp.dexpaprika.com/openapi)
+4. **Import the schema**:
+   - Select **"Import from URL"**
+   - Paste the OpenAPI URL: `https://mcp.dexpaprika.com/openapi`
+   - Click **"Import"**
+
+<Tip>
+  The OpenAPI specification will automatically configure all available DexPaprika endpoints, including networks, pools, tokens, and search functionality.
+</Tip>
+
+### Step 4: Configure action settings
+
+1. **Authentication**: Select "None" (DexPaprika API is publicly accessible)
+2. **Privacy policy**: Add `https://dexpaprika.com/terms/` if required
+3. **Action description**: The description will be auto-filled from the OpenAPI spec
+
+### Step 5: Test and Publish
+
+1. **Click "Test"** to verify the integration works
+2. **Try a sample query**: "What are the top 5 liquidity pools on Ethereum?"
+3. **Click "Save"** when everything works correctly
+4. **Choose visibility**: Keep private or share with others
+
+---
+
+## Usage examples
+
+Once your ChatGPT Action is set up, you can ask questions like:
+
+### Network and DEX queries
+- "Which blockchain networks does DexPaprika support?"
+- "What are the top DEXes on Solana by trading volume?"
+- "Show me all available DEXes on Arbitrum"
+
+### Pool analysis
+- "What are the most liquid USDC/ETH pools across all networks?"
+- "Find the highest volume pools on Uniswap V3"
+- "Compare fees between different USDT/USDC pools"
+
+### Token information
+- "What's the current price of SOL across different DEXes?"
+- "Show me all pools containing PEPE token"
+- "Get detailed information about Chainlink token on Ethereum"
+
+### Market research
+- "Find newly created pools with high trading volume"
+- "What's the total trading volume on PancakeSwap today?"
+- "Compare liquidity between Ethereum and Polygon networks"
+
+### Advanced analytics
+- "Analyze arbitrage opportunities between Uniswap and SushiSwap"
+- "Show me pools with unusual price movements in the last 24 hours"
+- "Find the most profitable liquidity provision opportunities"
+
+<Tip>
+  **Want to explore more?** Visit [mcp.dexpaprika.com](https://mcp.dexpaprika.com) to test the interface, check out our [tutorials](/tutorials/tutorial_intro) for step-by-step guides, or browse the [API documentation](/api-reference/introduction) for technical details.
+</Tip>
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="Action not working or returning errors">
+**Solutions**:
+1. Verify the OpenAPI URL is correctly imported: `https://mcp.dexpaprika.com/openapi`
+2. Check that your ChatGPT subscription includes Actions (Plus or Enterprise)
+3. Try recreating the Action if import failed
+4. Ensure no typos in the OpenAPI URL
+</Accordion>
+
+<Accordion title="Limited or missing data">
+**Solutions**:
+1. Be more specific in your queries (include network names, token symbols)
+2. Try different phrasings for your questions
+3. Check if the requested data exists (some networks/tokens may have limited pools)
+</Accordion>
+
+<Accordion title="Slow response times">
+**Solutions**:
+1. Break complex queries into smaller, focused questions
+2. Ask for specific data rather than broad overviews
+3. Be patient - real-time data fetching may take a few seconds
+</Accordion>
+</AccordionGroup>
+
+---
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card
+    title="API Documentation"
+    icon="book-open"
+    href="/api-reference/introduction"
+  >
+    Explore all available endpoints and their capabilities
+  </Card>
+  <Card
+    title="MCP Integration"
+    icon="plug"
+    href="/ai-integration/mcp"
+  >
+    Try our Model Context Protocol integration for Claude
+  </Card>
+</CardGroup>
+
+<CardGroup cols={2}>
+  <Card
+    title="Hosted MCP Server"
+    icon="cloud"
+    href="/ai-integration/hosted-mcp-server"
+  >
+    Zero-setup MCP integration for Claude and Cursor
+  </Card>
+  <Card
+    title="Find New Pools"
+    icon="plus-circle"
+    href="/tutorials/find-new-pools"
+  >
+    Learn how to discover newly created liquidity pools
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card
+    title="Join Our Discord"
+    icon="discord"
+    href="https://discord.gg/DhJge5TUGM"
+  >
+    Connect with our community for real-time support
+  </Card>
+  <Card
+    title="Direct Support"
+    icon="envelope"
+    href="mailto:support@coinpaprika.com"
+  >
+    Contact our team for technical assistance
+  </Card>
+</CardGroup>
+
+<Note>
+  **Custom integrations needed?** Our team can help you build advanced ChatGPT Actions tailored to your specific use cases. [Contact us](mailto:support@coinpaprika.com) to discuss your requirements.
+</Note> 

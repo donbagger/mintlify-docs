@@ -1,0 +1,166 @@
+---
+title: 'Integrating Documentation with VS Code'
+sidebarTitle: "VS Code integration - Installing MCP server"
+description: 'Learn how to integrate DexPaprika documentation and the hosted MCP server directly into VS Code for enhanced AI-assisted workflows.'
+---
+
+## What is VS Code?
+
+Visual Studio Code is a popular open-source editor with rich AI and extension capabilities. With MCP (Model Context Protocol) support in Copilot Chat, VS Code can access external data sources and documentation to provide more intelligent coding assistance.
+
+## Why integrate DexPaprika with VS Code?
+
+- **Real-time crypto data access** - Live market data, pool information, and token prices while coding
+- **Enhanced AI assistance** - Copilot Chat can reference DexPaprika data for better suggestions
+- **DeFi development workflow** - Build faster with comprehensive blockchain data
+- **Documentation context** - Quickly reference our API docs and tutorials while you work
+
+---
+
+## Step 1: Install MCP server with one click
+
+Use the "Connect to VS Code" button in our docs to open VS Code and add the DexPaprika MCP server.
+
+<Steps>
+<Step title="Find the Connect Button">
+1. Look for the **"Connect to VS Code"** button in our documentation
+2. Click the button to open VS Code and start MCP installation
+
+<Frame>
+  <img src="/images/tutorials/vscode-ide-integration/1.png" alt="Screenshot showing the 'Connect to VS Code' button highlighted in the documentation sidebar with the button text visible" />
+</Frame>
+</Step>
+
+<Step title="Confirm the Server URL">
+1. The install dialog pre-fills the DexPaprika hosted MCP SSE URL:
+   ```
+   https://mcp.dexpaprika.com/sse
+   ```
+2. Click **Install** to complete the setup
+3. Restart VS Code if prompted
+
+<Frame>
+  <img src="/images/tutorials/vscode-ide-integration/2.png" alt="VS Code MCP server configuration dialog with 'https://mcp.dexpaprika.com/sse' entered in the URL field" />
+</Frame>
+</Step>
+
+<Step title="Verify MCP Integration">
+1. Open **Copilot Chat** in VS Code
+2. Ask: "What are the top liquidity pools on Ethereum?"
+3. You should see DexPaprika data being retrieved and displayed
+4. Ask about specific networks, tokens, or pools to test further
+
+<Frame>
+  <img src="/images/tutorials/vscode-ide-integration/3.png" alt="VS Code Copilot Chat showing a response with DexPaprika pool data including volume, TVL, and token pairs" />
+</Frame>
+</Step>
+</Steps>
+
+<Note>
+If the button is not visible, copy this URL into the prompt when VS Code asks for the server address: `https://mcp.dexpaprika.com/sse`.
+</Note>
+
+## Available features
+
+Once integrated, you can access comprehensive DexPaprika functionality in Copilot Chat:
+
+### Real-time data access
+- **Network information** - Supported blockchain networks
+- **DEX data** - Decentralized exchange information and metrics
+- **Pool analytics** - Real-time liquidity pool data, volumes, and fees
+- **Token information** - Current prices, market data, and token details
+- **Search functionality** - Find tokens, pools, and DEXes across networks
+
+### Documentation context
+- **API reference** - Complete endpoint docs and examples
+- **SDK guides** - Language-specific integration tutorials
+- **Best practices** - Coding patterns and optimization tips
+- **Troubleshooting** - Common issues and solutions
+
+---
+
+## Usage examples
+
+### Example 1: Building a DeFi dashboard
+
+```
+"Help me create a React component that displays the top 5 liquidity pools 
+on Ethereum using the DexPaprika API. Include volume, TVL, and price data."
+```
+
+### Example 2: Token price monitoring
+
+```
+"Build a Python script that monitors SOL token prices across different 
+DEXes and alerts when there are significant price differences."
+```
+
+### Example 3: Pool discovery bot
+
+```
+"Create a Node.js application that finds newly created liquidity pools 
+with high trading volume and sends notifications."
+```
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+<Accordion title="MCP server connection issues">
+**Symptoms**: Errors or timeouts when connecting.
+
+**Solutions**:
+1. Verify internet connection is stable
+2. Check the server URL is exactly: `https://mcp.dexpaprika.com/sse`
+3. Restart VS Code completely
+4. Remove and re-add the MCP configuration
+5. Check VS Code output/logs for MCP-related errors
+</Accordion>
+
+<Accordion title="No tools or data showing in chat">
+**Symptoms**: DexPaprika tools do not appear or responses lack data.
+
+**Solutions**:
+1. Ensure the server is added and enabled in MCP settings
+2. Try re-adding via the **Connect to VS Code** button
+3. Ask more specific questions (e.g., network or token names)
+4. Restart VS Code
+</Accordion>
+
+<Accordion title="Performance issues">
+**Symptoms**: Slow responses.
+
+**Solutions**:
+1. Check network speed
+2. Break complex queries into smaller parts
+3. Use specific network/token names in queries
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card
+    title="Join Our Discord"
+    icon="discord"
+    href="https://discord.gg/DhJge5TUGM"
+  >
+    Connect with our community for real-time support and discussions
+  </Card>
+  <Card
+    title="Direct Support"
+    icon="envelope"
+    href="mailto:support@coinpaprika.com"
+  >
+    Contact our team for technical assistance and custom integrations
+  </Card>
+</CardGroup>
+
+<Note>
+Share your VS Code + DexPaprika integrations with our community! We love seeing what developers build. [Reach out](mailto:support@coinpaprika.com) to showcase your work.
+</Note>
+
+

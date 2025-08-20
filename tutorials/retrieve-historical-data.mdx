@@ -1,0 +1,213 @@
+---
+title: "Get Token Price History and OHLCV Data"
+sidebarTitle: "Price History API"
+description: "Get historical crypto price data (OHLCV) for any token across 20+ blockchains. Perfect for building charts, backtesting strategies, and price analysis."
+---
+
+<Info>
+  Having trouble with the API? We're here to help - [drop us a line](mailto:support@coinpaprika.com) and we'll get you sorted.
+</Info>
+
+## Why You Need Historical Price Data
+
+Building a crypto app? You'll likely need price charts, volatility analysis, or backtesting data. That's where OHLCV (Open, High, Low, Close, Volume) data comes in - it's the backbone of any serious crypto application.
+
+**Common use cases:**
+- **Price charts** in trading apps
+- **Backtesting** trading strategies  
+- **Volatility analysis** for risk management
+- **Historical performance** dashboards
+- **Market research** and analytics
+
+<Tip>
+  **Quick Start**: If you know your token already, jump to [Step 2](#step-2-get-price-history-data) to grab the data immediately.
+</Tip>
+
+---
+
+## Step 1: Find Your Token's Trading Pool
+
+Here's the thing - historical data comes from actual trading pools, not tokens directly. This makes sense because prices happen where people trade.
+
+### Quick Search (Recommended)
+The fastest way to find what you need using the [Search API](/api-reference/search/search-for-tokens-pools-and-dexes):
+
+```bash
+curl "https://api.dexpaprika.com/search?query=USDC" | jq
+```
+
+**Pro tip**: Search returns tokens, pools, and exchanges. Look for pools with high volume - they'll have the most reliable price data.
+
+### If You Have the Token Address
+Skip the search and go straight to pools using the [Token Pools API](/api-reference/tokens/get-top-x-pools-for-a-token):
+
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/tokens/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/pools" | jq
+```
+
+<Note>
+Always pick pools with decent volume (>$10k daily). Low-volume pools can have weird price spikes that don't reflect real market conditions.
+</Note>
+
+---
+
+## Step 2: Get Price History Data
+
+Now for the good stuff. Here's how to pull historical OHLCV data using the [Pool OHLCV API](/api-reference/pools/get-ohlcv-data-for-a-pool-pair):
+
+```bash
+curl "https://api.dexpaprika.com/networks/ethereum/pools/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640/ohlcv?start=2025-01-01&limit=30&interval=24h&inversed=true" | jq
+```
+
+*(Using USDC/ETH pool on Ethereum as example in this tutorial)*
+
+### What These Parameters Do:
+
+| Parameter | What It Does | Example |
+|-----------|--------------|---------|
+| `start` | When to start collecting data | `2025-01-01` or Unix timestamp |
+| `limit` | How many data points (max 366) | `30` for 30 days |
+| `interval` | Time between each point | `24h`, `1h`, `5m`, etc. |
+| `end` | When to stop (optional) | `2025-01-31` |
+| `inversed` | Flip the price ratio | `true` for ETH/USDC → USDC/ETH |
+
+### What You Get Back:
+
+```json
+[
+  {
+    "time_open": "2025-01-30T00:00:00Z",
+    "time_close": "2025-01-31T00:00:00Z",
+    "open": 3115.1614508315265,
+    "high": 3277.717757396331,
+    "low": 3097.803416632386,
+    "close": 3250.184016286268,
+    "volume": 226403988
+  }
+]
+```
+
+Each data point gives you everything you need for candlestick charts or analysis.
+
+---
+
+## Time Intervals That Actually Matter
+
+Choose based on what you're building:
+
+**For Trading Apps:**
+- `1m`, `5m` - Real-time trading
+- `1h`, `4h` - Swing trading
+- `24h` - Position trading
+
+**For Analytics Dashboards:**
+- `24h` - Daily summaries
+- Use daily data and aggregate for weekly/monthly views
+
+**For Research:**
+- `24h` with longer date ranges (up to 1 year)
+
+---
+
+## Production Tips That'll Save You Time
+
+### Cache Aggressively
+Historical data doesn't change - cache it locally:
+
+```bash
+# Check when pool was created to avoid requesting non-existent data
+curl "https://api.dexpaprika.com/networks/ethereum/pools/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" | jq '.created_at'
+```
+
+### Handle Data Gaps
+Some pools have quiet periods. Here's how to deal with gaps:
+
+```bash
+# Filter out low-volume periods that might have unreliable prices
+curl "https://api.dexpaprika.com/networks/ethereum/pools/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640/ohlcv?start=2025-01-01&limit=30&inversed=true" | jq '.[] | select(.volume > 1000)'
+```
+
+### Multi-Pool Strategy
+For major tokens, cross-reference data from multiple pools:
+
+```bash
+# Get all USDC pools to compare price consistency
+curl "https://api.dexpaprika.com/networks/ethereum/tokens/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48/pools?limit=5" | jq '.pools[] | .id'
+```
+
+### Rate Limiting
+Don't hammer the API. We suggest you to batch your requests and cache results:
+
+```javascript
+// Example: Batch multiple token histories
+const tokens = ['USDC', 'WETH', 'USDT'];
+const historyPromises = tokens.map(token => 
+  fetch(`/api/history/${token}`).then(r => r.json())
+);
+const allHistories = await Promise.all(historyPromises);
+```
+
+---
+
+## Troubleshooting Common Issues
+
+### "Empty Response" 
+Pool might not have data for your date range:
+```bash
+# Check pool age first
+curl "https://api.dexpaprika.com/networks/ethereum/pools/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640" | jq '.created_at'
+```
+
+### "Weird Price Spikes"
+You hit a low-liquidity period. Switch to shorter intervals or higher-volume pools:
+```bash
+# Use 6h intervals to smooth out anomalies
+curl "https://api.dexpaprika.com/networks/ethereum/pools/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640/ohlcv?start=2025-01-01&interval=6h&limit=50&inversed=true"
+```
+
+### "Upside-Down Prices"
+You need the inverted ratio:
+```bash
+# Flip from TOKEN/ETH to ETH/TOKEN
+curl "https://api.dexpaprika.com/networks/ethereum/pools/0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640/ohlcv?start=2025-01-01&inversed=true&limit=10"
+```
+
+---
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card
+    title="Pool Details API"
+    icon="chart-line"
+    href="/api-reference/pools/get-a-pool-on-a-network"
+  >
+    Get liquidity, fees, and other pool metrics.
+  </Card>
+  <Card
+    title="Real-time Price Feeds"
+    icon="bolt"
+    href="/tutorials/fetch-token-price"
+  >
+    Combine historical data with live prices.
+  </Card>
+</CardGroup>
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card
+    title="Discord Community"
+    icon="discord"
+    href="https://discord.gg/DhJge5TUGM"
+  >
+    Ask questions and see what others are building.
+  </Card>
+  <Card
+    title="Direct Support"
+    icon="message"
+    href="mailto:support@coinpaprika.com"
+  >
+    Hit a wall? We'll help you debug it.
+  </Card>
+</CardGroup> 

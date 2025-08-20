@@ -1,71 +1,219 @@
 ---
-title: Introduction
-description: "Welcome to the home of your new documentation"
+title: Welcome to DexPaprika API documentation! 
+sidebarTitle: "Quickstart"
+description: "DexPaprika provides latest data access to comprehensive DEX data, including token prices, liquidity pools, and trading volumes. Whether you're building a trading dashboard, portfolio tracker, or DeFi application, we've got you covered.
+"
 ---
 
-<img
-  className="block dark:hidden"
-  src="/images/hero-light.png"
-  alt="Hero Light"
-/>
-<img
-  className="hidden dark:block"
-  src="/images/hero-dark.png"
-  alt="Hero Dark"
-/>
-
-## Setting up
-
-The first step to world-class documentation is setting up your editing environments.
-
 <CardGroup cols={2}>
   <Card
-    title="Edit Your Docs"
-    icon="pen-to-square"
-    href="https://mintlify.com/docs/quickstart"
+    title="Quick API Reference"
+    icon="bolt"
+    href="/api-reference/introduction"
   >
-    Get your docs set up locally for easy development
+    Jump straight into the API documentation and start making requests within minutes
   </Card>
   <Card
-    title="Preview Changes"
-    icon="image"
-    href="https://mintlify.com/docs/development"
+    title="Follow Tutorials"
+    icon="graduation-cap"
+    href="/tutorials/tutorial_intro"
   >
-    Preview your changes before you push to make sure they're perfect
+    Learn step-by-step how to integrate DexPaprika into your applications
   </Card>
 </CardGroup>
 
-## Make it yours
+## Let's make your first API call in 3 steps!
 
-Update your docs to your brand and add valuable content for the best user conversion.
+<Tip>You can also make your first request directly in our API Playground available in the API Reference section. Visit [GET Token](/api-reference/tokens/get-a-tokens-latest-data-on-a-network) to try it out.</Tip>
+In the next steps we will make a GET request to the [Token](/api-reference/tokens/get-a-tokens-latest-data-on-a-network) endpoint in order to get the latest price in USD of SOL. All we need is the network ID and the token address.
+- Network ID: `solana`
+- Token address: `So11111111111111111111111111111111111111112`
+<Note>You can find the list of all supported networks in the [Networks](/api-reference/networks/get-a-list-of-available-blockchain-networks) endpoint.</Note>
+<Steps>
+<Step title="Make a GET request">
+Simply make a GET request to the following endpoint in order to fetch latest data about any token. In this case we will use the specified above network ID and token address to populate the endpoint in a format of `https://api.dexpaprika.com/networks/{network_id}/tokens/{address}`.
+<CodeGroup>
+```bash bash
+curl -X GET "https://api.dexpaprika.com/networks/solana/tokens/So11111111111111111111111111111111111111112"
+```
+```python python.py
+import requests
+
+response = requests.get("https://api.dexpaprika.com/networks/solana/tokens/So11111111111111111111111111111111111111112")
+print(response.json())
+```
+```javascript javascript.js
+fetch("https://api.dexpaprika.com/networks/solana/tokens/So11111111111111111111111111111111111111112")
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+</CodeGroup>
+</Step>
+<Step title="Get latest data about Solana (SOL)">
+This will return quite lengthy response of the latest data about Solana (SOL) that will look similar to this. We send a lot of data in the response, so in the next step we will extract only the price of SOL in USD.
+```json Response [expandable]
+{
+    "id": "So11111111111111111111111111111111111111112",
+    "name": "Wrapped SOL",
+    "symbol": "SOL",
+    "chain": "solana",
+    "decimals": 9,
+    "total_supply": 0,
+    "description": "",
+    "website": "",
+    "explorer": "",
+    "added_at": "2024-10-04T08:30:05Z",
+    "summary": {
+        "main_pool": "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE",
+        "price": 164.9536657855954,
+        "price_usd": 165.0363416231933,
+        "liquidity_usd": 21277129298.9034355594499,
+        "24h": {
+            "volume": 18207227.90283451,
+            "volume_usd": 3172926820.723157,
+            "sell": 11953376,
+            "buy": 8641848,
+            "txns": 20595327
+        },
+        "6h": {
+            "volume": 5237173.683970005,
+            "volume_usd": 882506167.8594747,
+            "sell": 3309487,
+            "buy": 2416834,
+            "txns": 5726323
+        },
+        "1h": {
+            "volume": 670087.840859647,
+            "volume_usd": 119985216.45169246,
+            "sell": 519919,
+            "buy": 343819,
+            "txns": 863738
+        },
+        "30m": {
+            "volume": 327613.1220672249,
+            "volume_usd": 54505021.9229673,
+            "sell": 245850,
+            "buy": 168366,
+            "txns": 414216
+        },
+        "15m": {
+            "volume": 168834.195930299,
+            "volume_usd": 28068199.473847672,
+            "sell": 124337,
+            "buy": 82098,
+            "txns": 206435
+        },
+        "5m": {
+            "volume": 64118.999946111,
+            "volume_usd": 10629376.9487243,
+            "sell": 45027,
+            "buy": 30474,
+            "txns": 75501
+        }
+    },
+    "last_updated": "2025-02-18T20:36:46.946687298Z"
+}
+```
+</Step>
+<Step title="Extract the price (or any other data)">
+As you can see, the response is very rich of data. You can extract only the price of SOL in USD from the full response by navigating to the `summary` object (_or any other object_) and then to the `price_usd` key (_or any other key_) simply by modyfying the previously used GET request:
+<CodeGroup>
+```bash bash
+curl -s "https://api.dexpaprika.com/networks/solana/tokens/So11111111111111111111111111111111111111112" | jq '.summary.price_usd'
+```
+```python python.py
+import requests
+
+response = requests.get("https://api.dexpaprika.com/networks/solana/tokens/So11111111111111111111111111111111111111112")
+print(response.json()["summary"]["price_usd"])
+```
+```javascript javascript.js
+fetch("https://api.dexpaprika.com/networks/solana/tokens/So11111111111111111111111111111111111111112")
+  .then(response => response.json())
+  .then(data => {
+    const onlyPrice = data.summary.price_usd;
+    console.log(onlyPrice);
+  });
+```
+</CodeGroup>
+And as a result you will get the price of SOL in USD:
+```json summary.price_usd
+165.0363416231933
+```
+ Congratulations! You just successfully retrieved the latest price of SOL in USD!
+</Step>
+</Steps>
+
+## Next Steps
+<CardGroup cols={2}>
+  <Card
+    title="Quick API Reference"
+    icon="bolt"
+    href="/api-reference/introduction"
+  >
+    Jump straight into the API documentation and start making requests within minutes
+  </Card>
+  <Card
+    title="Follow Tutorials"
+    icon="graduation-cap"
+    href="/tutorials/tutorial_intro"
+  >
+    Learn step-by-step how to integrate DexPaprika into your applications
+  </Card>
+</CardGroup>
+
+## Popular Use Cases
 
 <CardGroup cols={2}>
   <Card
-    title="Customize Style"
-    icon="palette"
-    href="https://mintlify.com/docs/settings/global"
+    title="Track Token Prices"
+    icon="chart-line"
   >
-    Customize your docs to your company's colors and brands
+    Get real-time and historical price data for any Solana token
   </Card>
   <Card
-    title="Reference APIs"
-    icon="code"
-    href="https://mintlify.com/docs/api-playground/openapi"
+    title="Monitor Liquidity"
+    icon="water"
   >
-    Automatically generate endpoints from an OpenAPI spec
-  </Card>
-  <Card
-    title="Add Components"
-    icon="screwdriver-wrench"
-    href="https://mintlify.com/docs/content/components/accordions"
-  >
-    Build interactive features and designs to guide your users
-  </Card>
-  <Card
-    title="Get Inspiration"
-    icon="stars"
-    href="https://mintlify.com/customers"
-  >
-    Check out our showcase of our favorite documentation
+    Access detailed liquidity pool data across major Solana DEXes
   </Card>
 </CardGroup>
+<CardGroup cols={2}>
+  <Card
+    title="Trading Analytics"
+    icon="magnifying-glass-chart"
+  >
+    Analyze trading volumes, price changes, and market trends
+  </Card>
+  <Card
+    title="DEX Aggregation"
+    icon="layer-group"
+  >
+    Compare prices and liquidity across different DEXes
+  </Card>
+</CardGroup>
+
+## Get Support
+
+We're here to help you succeed with DexPaprika.
+
+<CardGroup cols={2}>
+  <Card
+    title="Join Discord"
+    icon="discord"
+    href="https://discord.gg/DhJge5TUGM"
+  >
+    Connect with our community and get real-time support
+  </Card>
+  <Card
+    title="Give Feedback"
+    icon="message"
+    href="mailto:support@coinpaprika.com"
+  >
+    Share your experience and help us improve
+  </Card>
+</CardGroup>
+<Note>
+  **Looking for enterprise solutions?** We offer dedicated support, higher rate limits, and custom features.
+  [Contact our team](mailto:support@coinpaprika.com) to learn more.
+</Note>

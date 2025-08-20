@@ -1,0 +1,188 @@
+---
+title: "Fetching Token Prices"
+sidebarTitle: "Fetch Token Prices"
+description: "Learn how to retrieve the price of any token using DexPaprika API with simple curl commands."
+---
+
+<div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', maxWidth: '100%', marginBottom: '1rem' }}>
+  <iframe 
+    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+    src="https://www.youtube.com/embed/UJIBbwwbpPI?si=L69InN1Xk87i8SJZ"
+    title="YouTube video player"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen
+  />
+</div>
+
+<Info>
+  The DexPaprika API provides reliable data access. If you find any issues or have suggestions for improvement, please [contact us](mailto:support@coinpaprika.com).
+</Info>
+
+## Fetching Token Prices
+
+This tutorial will walk you through retrieving the **latest price of any token** using **DexPaprika API**. We will use simple `cURL` commands to interact with the API.
+
+<Tip>
+You can test the API directly in the documentation without writing any code. Visit the [API Reference](/api-reference/introduction) to try it out.
+</Tip>
+
+---
+
+## Step 1: Get Available Networks
+To fetch token data, you need the **network ID**. Use this request to get a list of supported blockchain networks:
+
+```bash
+curl -X GET "https://api.dexpaprika.com/networks" | jq
+```
+
+The response will include networks like **Solana, Base, Aptos, Ethereum**, etc. Choose the one you need.
+
+<Note>
+You can find the full list of supported networks in the [Networks API](/api-reference/networks/get-a-list-of-available-blockchain-networks).
+</Note>
+
+---
+
+## Step 2: Find a Token Address
+If you don't have a token address, you can search for it using the API:
+
+```bash
+curl -X GET "https://api.dexpaprika.com/search?query=YOUR_INPUT"
+```
+
+Replace `YOUR_INPUT` with the actual phrase you're looking for. The response will return matching token & pools along with their addresses.
+
+---
+
+## Step 3: Fetch the Token Price
+Once you have the **network ID** and **token address**, use the following request to get the token's price:
+
+```bash
+curl -X GET "https://api.dexpaprika.com/networks/{network}/tokens/{token_address}"
+```
+
+Replace:
+- `{network}` with the network (e.g., `solana`, `base`)
+- `{token_address}` with the address found in Step 2
+
+The response will return data like this:
+
+```json Response [expandable]
+{
+    "id": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+    "name": "Jupiter",
+    "symbol": "JUP",
+    "chain": "solana",
+    "decimals": 6,
+    "total_supply": 9999979509174084,
+    "description": "",
+    "website": "",
+    "explorer": "",
+    "added_at": "2024-09-11T04:37:20Z",
+    "summary": {
+        "price_usd": 0.6863252359922881,
+        "fdv": 6863238296.5519485244070243816004,
+        "liquidity_usd": 25575125.4495078768612017,
+        "24h": {
+            "volume": 80207699.45778705,
+            "volume_usd": 55796800.523819186,
+            "sell": 106864,
+            "buy": 57315,
+            "txns": 164179
+        },
+        "6h": {
+            "volume": 11540575.177305005,
+            "volume_usd": 8037337.331943456,
+            "sell": 17801,
+            "buy": 9926,
+            "txns": 27727
+        },
+        "1h": {
+            "volume": 2766848.754695,
+            "volume_usd": 1900837.0877990713,
+            "sell": 3484,
+            "buy": 2082,
+            "txns": 5566
+        },
+        "30m": {
+            "volume": 1394651.1182109998,
+            "volume_usd": 954794.8829624434,
+            "sell": 1907,
+            "buy": 1198,
+            "txns": 3105
+        },
+        "15m": {
+            "volume": 373588.37757400004,
+            "volume_usd": 255759.0367338767,
+            "sell": 742,
+            "buy": 316,
+            "txns": 1058
+        },
+        "5m": {
+            "volume": 109317.68508500002,
+            "volume_usd": 74963.92390747965,
+            "sell": 265,
+            "buy": 86,
+            "txns": 351
+        }
+    },
+    "last_updated": "2025-02-26T13:11:25.858732857Z"
+}
+```
+
+---
+
+## Step 4: Extract Only the Price
+If you only need the **token price in USD**, you can filter the response using `jq`:
+
+```bash
+curl -X GET "https://api.dexpaprika.com/networks/{network}/tokens/{token_address}" | jq '.summary.price_usd'
+```
+
+This will return only the price:
+
+```json
+0.6863252359922881
+```
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick API Reference"
+    icon="bolt"
+    href="/api-reference/introduction"
+  >
+    Jump straight into the API documentation and start making requests within minutes.
+  </Card>
+  <Card
+    title="More Tutorials"
+    icon="graduation-cap"
+    href="/tutorials/tutorial_intro"
+  >
+    Learn more ways to integrate DexPaprika into your applications.
+  </Card>
+</CardGroup>
+
+## Get Support
+
+<CardGroup cols={2}>
+  <Card
+    title="Join Discord"
+    icon="discord"
+    href="https://discord.gg/DhJge5TUGM"
+  >
+    Connect with our community and get real-time support.
+  </Card>
+  <Card
+    title="Give Feedback"
+    icon="message"
+    href="mailto:support@coinpaprika.com"
+  >
+    Share your experience and help us improve.
+  </Card>
+</CardGroup>

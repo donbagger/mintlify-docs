@@ -1,13 +1,40 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "DexPaprika API",
   "colors": {
     "primary": "#16A34A",
     "light": "#07C983",
     "dark": "#15803D"
   },
   "favicon": "/favicon.svg",
+  "integrations": {
+    "ga4": {
+      "measurementId": "G-1WLLWHVKMG"
+    }
+  },
+  "customScripts": [
+    "/dp-token-lookup.js"
+  ],
+  "contextual": {
+    "options": [
+      "copy",
+      "chatgpt",
+      "claude",
+      {
+        "title": "Cursor Integration",
+        "description": "Install DexPaprika MCP server in Cursor IDE",
+        "icon": "laptop-code",
+        "href": "cursor://anysphere.cursor-deeplink/mcp/install?name=DexPaprika&config=eyJuYW1lIjoiRGV4UGFwcmlrYSIsInVybCI6Imh0dHBzOi8vbWNwLmRleHBhcHJpa2EuY29tL3NzZSJ9Cg=="
+      },
+      {
+        "title": "VS Code Integration",
+        "description": "Install DexPaprika MCP server in VS Code",
+        "icon": "code",
+        "href": "vscode:mcp/install?%7B%22name%22%3A%22DexPaprika%20API%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.dexpaprika.com%2Fsse%22%7D"
+      }
+    ]
+  },
   "navigation": {
     "tabs": [
       {
@@ -17,85 +44,141 @@
             "group": "Get Started",
             "pages": [
               "introduction",
-              "quickstart",
-              "development"
+              "/get-started/sdk-ts",
+              "/get-started/sdk-go",
+              "/get-started/sdk-python",
+              "/get-started/sdk-php"
             ]
           },
           {
-            "group": "Essentials",
+            "group": "AI Integration",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/settings",
-              "essentials/navigation",
-              "essentials/reusable-snippets"
+              "/ai-integration/hosted-mcp-server",
+              "/ai-integration/mcp",
+              "/ai-integration/chatgpt-actions",
+              "/ai-integration/cursor-ide-integration",
+              "/ai-integration/vscode-ide-integration"
+            ]
+          },
+          {
+            "group": "Tutorials",
+            "pages": [
+              "/tutorials/tutorial_intro",
+              "/tutorials/fetch-token-price",
+              "/tutorials/crypto-alert-bot",
+              "/tutorials/retrieve-historical-data",
+              "/tutorials/find-new-pools",
+              "/tutorials/local-analytics-with-duckdb",
+              "/tutorials/scaling-with-clickhouse",
+              "/tutorials/real-time-analytics-with-influxdb"
+            ]
+          },
+          {
+            "group": "Tools",
+            "pages": [
+              "/tools/token-lookup"
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
+        "tab": "API REST Reference",
+        "openapi": "api-reference/openapi.yml",
         "groups": [
           {
-            "group": "API Documentation",
+            "group": "Getting Started",
             "pages": [
               "api-reference/introduction"
             ]
-          },
-          {
-            "group": "Endpoint Examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete"
-            ]
           }
+        ]
+      },
+      {
+        "tab": "Changelog",
+        "pages": [
+          "changelog/changelog"
         ]
       }
     ],
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "API Playground",
+          "href": "https://docs.dexpaprika.com/api-reference/introduction",
+          "icon": "code"
         },
         {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
+          "anchor": "Discord Community",
+          "href": "https://discord.gg/DhJge5TUGM",
+          "icon": "discord"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "DexPaprika",
+          "href": "https://dexpaprika.com",
+          "icon": "browser"
+        },
+        {
+          "anchor": "CoinPaprika",
+          "href": "https://coinpaprika.com",
+          "icon": "pepper-hot"
+        },
+        {
+          "anchor": "CoinPaprika on X",
+          "href": "https://x.com/coinpaprika",
+          "icon": "x-twitter"
         }
       ]
     }
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark": "/logo/dark.svg",
+    "href": "https://dexpaprika.com"
   },
   "navbar": {
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@coinpaprika.com"
+      },
+      {
+        "label": "Terms of Use",
+        "href": "https://dexpaprika.com/terms/"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Visit DexPaprika",
+      "href": "https://dexpaprika.com/"
     }
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/dexpaprika",
+      "github": "https://github.com/coinpaprika"
+    }
+  },
+  "api": {
+    "baseUrl": "https://api.dexpaprika.com/",
+    "playground": {
+      "mode": "simple"
+    }
+  },
+  "seo": {
+    "indexing": "all",
+    "metatags": {
+      "title": "DexPaprika API Docs | Real-Time Crypto & DeFi Data",
+      "description": "Official docs for DexPaprika — access real-time & historical crypto, DeFi and on-chain data via a blazing-fast API built for developers, quant trading systems and AI/LLM agents.",
+      "keywords": "DexPaprika, DexPaprika API, cryptocurrency API, crypto market data API, blockchain data API, digital asset data, real-time crypto prices, historical crypto prices, token metadata API, crypto data for developers, REST crypto API, GraphQL crypto API, JSON crypto feed, web3 data API, DeFi data API, DEX liquidity data, on-chain analytics API, crypto order-book API, LLM-ready crypto dataset, AI agent crypto data, blockchain data for LLMs, crypto data for GPT, machine learning crypto dataset, AI-powered crypto analytics, web3 AI chatbot data, autonomous trading agents data, crypto market intelligence, algorithmic trading data, crypto price prediction dataset, risk management crypto data, portfolio analytics API, token classification data, NFT metadata API",
+      "robots": "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+      "og:type": "website",
+      "og:site_name": "DexPaprika",
+      "og:title": "DexPaprika API Docs | Real-Time Crypto & DeFi Data",
+      "og:description": "API reference, SDKs and AI/LLM guides for accessing real-time & historical crypto data from DexPaprika.",
+      "og:url": "https://docs.dexpaprika.com",
+      "twitter:card": "summary_large_image",
+      "twitter:title": "DexPaprika API Docs",
+      "twitter:description": "Explore DexPaprika's API for real-time crypto, DeFi & on-chain data — built for devs, quants and AI agents."
     }
   }
 }
