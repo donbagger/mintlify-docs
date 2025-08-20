@@ -1,0 +1,85 @@
+---
+title: "{{TOKEN_SYMBOL}} - {{TOKEN_NAME}}"
+sidebarTitle: "{{TOKEN_SYMBOL}} Token Data"
+description: "Real-time data and analytics for {{TOKEN_SYMBOL}} ({{TOKEN_NAME}}) on {{TOKEN_CHAIN}}"
+---
+
+# {{TOKEN_SYMBOL}} Token Data
+
+## Overview
+
+**Symbol:** {{TOKEN_SYMBOL}}  
+**Name:** {{TOKEN_NAME}}  
+**Chain:** {{TOKEN_CHAIN}}  
+**Address:** `{{TOKEN_ADDRESS}}`
+
+## Current Market Data
+
+**Price:** ${{TOKEN_PRICE}}  
+**24h Volume:** ${{TOKEN_VOLUME}}  
+**Market Cap:** ${{TOKEN_MARKET_CAP}}
+
+## Quick Actions
+
+<div class="dp-actions">
+  <a href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network?symbol={{TOKEN_SYMBOL}}&chain={{TOKEN_CHAIN}}&address={{TOKEN_ADDRESS}}" target="_self">Get Latest Price</a>
+  <a href="/api-reference/tokens/get-top-x-pools-for-a-token?symbol={{TOKEN_SYMBOL}}&chain={{TOKEN_CHAIN}}&address={{TOKEN_ADDRESS}}" target="_self">Top Pools</a>
+  <a href="/api-reference/pools/get-ohlcv-data-for-a-pool-pair?symbol={{TOKEN_SYMBOL}}&chain={{TOKEN_CHAIN}}&address={{TOKEN_ADDRESS}}" target="_self">OHLCV Data</a>
+  <a href="/get-started/sdk-ts?symbol={{TOKEN_SYMBOL}}&chain={{TOKEN_CHAIN}}&address={{TOKEN_ADDRESS}}" target="_self">SDK Examples</a>
+</div>
+
+## API Examples
+
+### Get Current Price
+
+```bash
+curl "https://api.dexpaprika.com/networks/{{TOKEN_CHAIN}}/tokens/{{TOKEN_ADDRESS}}"
+```
+
+### Get Top Pools
+
+```bash
+curl "https://api.dexpaprika.com/networks/{{TOKEN_CHAIN}}/tokens/{{TOKEN_ADDRESS}}/pools"
+```
+
+### Get Historical Data
+
+```bash
+curl "https://api.dexpaprika.com/networks/{{TOKEN_CHAIN}}/tokens/{{TOKEN_ADDRESS}}/ohlcv?start=2024-01-01&end=2024-12-31"
+```
+
+## How to Use This Data
+
+### 1. **Real-Time Price Monitoring**
+Use the price endpoint to monitor {{TOKEN_SYMBOL}} prices in real-time:
+
+```typescript
+const response = await fetch('https://api.dexpaprika.com/networks/{{TOKEN_CHAIN}}/tokens/{{TOKEN_ADDRESS}}');
+const data = await response.json();
+console.log(`Current {{TOKEN_SYMBOL}} price: $${data.price_usd}`);
+```
+
+### 2. **Volume Analysis**
+Track trading volume to understand market activity:
+
+```typescript
+const data = await fetch('https://api.dexpaprika.com/networks/{{TOKEN_CHAIN}}/tokens/{{TOKEN_ADDRESS}}').then(r => r.json());
+console.log(`24h volume: $${data.volume_usd_24h}`);
+```
+
+### 3. **Historical Price Data**
+Get historical data for analysis and backtesting:
+
+```typescript
+const historicalData = await fetch('https://api.dexpaprika.com/networks/{{TOKEN_CHAIN}}/tokens/{{TOKEN_ADDRESS}}/ohlcv?start=2024-01-01&end=2024-12-31').then(r => r.json());
+```
+
+## Related Resources
+
+- [DexPaprika API Documentation](/api-reference/introduction)
+- [Getting Started Guide](/get-started/sdk-ts)
+- [Token Lookup Tool](/tools/token-lookup)
+
+---
+
+*This page was dynamically generated for {{TOKEN_SYMBOL}} on {{GENERATED_DATE}}*

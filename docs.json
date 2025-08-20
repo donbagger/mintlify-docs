@@ -76,7 +76,8 @@
           {
             "group": "Tools",
             "pages": [
-              "/tools/token-lookup"
+              "/tools/token-lookup",
+              "/tools/token-template"
             ]
           }
         ]

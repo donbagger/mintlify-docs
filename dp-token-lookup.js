@@ -459,19 +459,38 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           
           console.log('Token button clicked for query:', query);
           
+          // Hide the button immediately
+          button.style.display = 'none';
+          button.classList.remove('show');
+          
           // Search for tokens
           const results = await searchTokens(query);
           if (results.length === 0) {
-            // Show a subtle notification instead of alert
             showNotification('No tokens found for "' + query + '"', 'error');
             return;
           }
           
-          // If single result, show it directly on the page
+          // If single result, redirect to template page with token data
           if (results.length === 1) {
             const token = results[0];
-            console.log('Single token found, displaying on page:', token);
-            await displayTokenDataOnPage(token);
+            console.log('Single token found, redirecting to template:', token);
+            
+            // Fetch real-time data first
+            const priceData = await fetchTokenPrice(token);
+            
+            // Redirect to template page with data
+            const params = new URLSearchParams({
+              symbol: token.symbol,
+              name: token.name,
+              chain: token.chain,
+              address: token.address || '',
+              price: priceData?.price_usd || 'N/A',
+              volume: priceData?.volume_usd_24h || 'N/A',
+              marketCap: priceData?.market_cap_usd || 'N/A',
+              query: query
+            });
+            
+            window.location.href = `/tools/token-template?${params.toString()}`;
             return;
           }
           
@@ -762,6 +781,12 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           }
         }
         
+        // Check if we're on the token template page
+        if (window.location.pathname.includes('/tools/token-template')) {
+          console.log('On token template page, processing template...');
+          processTokenTemplate();
+        }
+        
         // Mount page-specific widgets
         const containers = document.querySelectorAll('#dp-token-lookup');
         console.log('Found', containers.length, 'lookup containers');
@@ -890,6 +915,97 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
       const token = { symbol, chain, address };
       await displayTokenDataOnPage(token);
     };
+
+    function processTokenTemplate() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Get token data from URL parameters
+        const tokenData = {
+          symbol: urlParams.get('symbol') || 'TOKEN',
+          name: urlParams.get('name') || 'Token',
+          chain: urlParams.get('chain') || 'ethereum',
+          address: urlParams.get('address') || '0x...',
+          price: urlParams.get('price') || 'N/A',
+          volume: urlParams.get('volume') || 'N/A',
+          marketCap: urlParams.get('marketCap') || 'N/A',
+          query: urlParams.get('query') || ''
+        };
+        
+        console.log('Processing template with token data:', tokenData);
+        
+        // Replace placeholders in the entire document
+        const replacements = {
+          '{{TOKEN_SYMBOL}}': tokenData.symbol,
+          '{{TOKEN_NAME}}': tokenData.name,
+          '{{TOKEN_CHAIN}}': tokenData.chain,
+          '{{TOKEN_ADDRESS}}': tokenData.address,
+          '{{TOKEN_PRICE}}': tokenData.price,
+          '{{TOKEN_VOLUME}}': tokenData.volume,
+          '{{TOKEN_MARKET_CAP}}': tokenData.marketCap,
+          '{{GENERATED_DATE}}': new Date().toLocaleString()
+        };
+        
+        // Replace in document title
+        document.title = document.title.replace(/{{TOKEN_SYMBOL}}/g, tokenData.symbol)
+                                      .replace(/{{TOKEN_NAME}}/g, tokenData.name);
+        
+        // Replace in all text content
+        const walker = document.createTreeWalker(
+          document.body,
+          NodeFilter.SHOW_TEXT,
+          null,
+          false
+        );
+        
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+          textNodes.push(node);
+        }
+        
+        textNodes.forEach(textNode => {
+          let text = textNode.textContent;
+          Object.entries(replacements).forEach(([placeholder, value]) => {
+            text = text.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+          });
+          if (text !== textNode.textContent) {
+            textNode.textContent = text;
+          }
+        });
+        
+        // Replace in HTML attributes (href, etc.)
+        const elements = document.querySelectorAll('a[href*="{{"], a[href*="}}"]');
+        elements.forEach(element => {
+          let href = element.getAttribute('href');
+          if (href) {
+            Object.entries(replacements).forEach(([placeholder, value]) => {
+              href = href.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+            });
+            element.setAttribute('href', href);
+          }
+        });
+        
+        // Update page metadata
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription) {
+          let description = metaDescription.getAttribute('content');
+          Object.entries(replacements).forEach(([placeholder, value]) => {
+            description = description.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+          });
+          metaDescription.setAttribute('content', description);
+        }
+        
+        console.log('Template processing completed');
+        
+        // Show a subtle notification
+        showNotification(`✅ ${tokenData.symbol} data loaded successfully!`, 'success');
+        
+      } catch (err) {
+        console.error('Error processing token template:', err);
+        showNotification('❌ Error loading token data', 'error');
+      }
+    }
 
     // Notification function for subtle feedback
     function showNotification(message, type = 'info') {
