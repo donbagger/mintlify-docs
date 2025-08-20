@@ -47,7 +47,8 @@ function findSearchInput() {
     'input[type="search"]',
     '.search input',
     '[data-testid*="search"]',
-    'input[aria-label*="search" i]'
+    'input[aria-label*="search" i]',
+    '#search-input'
   ];
   
   for (var i = 0; i < selectors.length; i++) {
@@ -57,6 +58,52 @@ function findSearchInput() {
     }
   }
   return null;
+}
+
+// Global variables for button management
+var currentButton = null;
+var currentSearchInput = null;
+var lastInputValue = '';
+var checkInterval = null;
+
+// Update button visibility
+function updateButtonVisibility() {
+  if (!currentSearchInput || !currentButton) return;
+  
+  var value = currentSearchInput.value.trim();
+  console.log('Checking input value:', value, 'Last value:', lastInputValue);
+  
+  if (value !== lastInputValue) {
+    lastInputValue = value;
+    
+    if (value.length >= 1) {
+      var results = searchTokens(value);
+      console.log('Search results for "' + value + '":', results);
+      
+      if (results.length > 0) {
+        currentButton.textContent = 'Looking for "' + value.toUpperCase() + '" token data?';
+        currentButton.classList.add('show');
+        positionButton();
+        console.log('Button should be visible now');
+      } else {
+        currentButton.classList.remove('show');
+        console.log('No results, hiding button');
+      }
+    } else {
+      currentButton.classList.remove('show');
+      console.log('Empty input, hiding button');
+    }
+  }
+}
+
+// Position button
+function positionButton() {
+  if (!currentSearchInput || !currentButton) return;
+  
+  var rect = currentSearchInput.getBoundingClientRect();
+  currentButton.style.left = (rect.right + 10) + 'px';
+  currentButton.style.top = (rect.top - 2) + 'px';
+  console.log('Button positioned at:', currentButton.style.left, currentButton.style.top);
 }
 
 // Setup global search button
@@ -71,46 +118,56 @@ function setupGlobalSearchButton() {
   
   console.log('Found search input:', searchInput);
   
+  // Remove existing button if any
+  if (currentButton) {
+    document.body.removeChild(currentButton);
+  }
+  
   // Create button
-  var button = document.createElement('button');
-  button.className = 'dp-token-button';
-  button.textContent = 'Looking for token data?';
-  document.body.appendChild(button);
+  currentButton = document.createElement('button');
+  currentButton.className = 'dp-token-button';
+  currentButton.textContent = 'Looking for token data?';
+  document.body.appendChild(currentButton);
   
-  // Position button
-  function positionButton() {
-    var rect = searchInput.getBoundingClientRect();
-    button.style.left = (rect.right + 10) + 'px';
-    button.style.top = (rect.top - 2) + 'px';
+  // Store reference
+  currentSearchInput = searchInput;
+  lastInputValue = searchInput.value.trim();
+  
+  // Add multiple event listeners for better coverage
+  var events = ['input', 'keyup', 'keydown', 'change', 'focus', 'paste'];
+  for (var i = 0; i < events.length; i++) {
+    searchInput.addEventListener(events[i], updateButtonVisibility);
   }
   
-  // Show/hide button based on input
-  function updateButtonVisibility() {
-    var value = searchInput.value.trim();
-    if (value.length >= 1) {
-      var results = searchTokens(value);
-      if (results.length > 0) {
-        button.textContent = 'Looking for "' + value.toUpperCase() + '" token data?';
-        button.classList.add('show');
-        positionButton();
-      } else {
-        button.classList.remove('show');
+  // Add MutationObserver to watch for dynamic changes
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+        updateButtonVisibility();
       }
-    } else {
-      button.classList.remove('show');
-    }
-  }
-  
-  // Add event listeners
-  searchInput.addEventListener('input', updateButtonVisibility);
-  searchInput.addEventListener('focus', updateButtonVisibility);
-  searchInput.addEventListener('blur', function() {
-    setTimeout(function() { button.classList.remove('show'); }, 200);
+    });
   });
   
+  observer.observe(searchInput, {
+    attributes: true,
+    attributeFilter: ['value']
+  });
+  
+  // Periodic check as fallback
+  if (checkInterval) {
+    clearInterval(checkInterval);
+  }
+  
+  checkInterval = setInterval(function() {
+    if (currentSearchInput && currentSearchInput.value.trim() !== lastInputValue) {
+      console.log('Periodic check detected value change');
+      updateButtonVisibility();
+    }
+  }, 100);
+  
   // Button click handler
-  button.addEventListener('click', function() {
-    var query = searchInput.value.trim();
+  currentButton.addEventListener('click', function() {
+    var query = currentSearchInput.value.trim();
     var results = searchTokens(query);
     
     if (results.length === 0) {
@@ -119,8 +176,8 @@ function setupGlobalSearchButton() {
     }
     
     // Hide button immediately
-    button.style.display = 'none';
-    button.classList.remove('show');
+    currentButton.style.display = 'none';
+    currentButton.classList.remove('show');
     
     // Redirect to lookup page with token data
     var params = new URLSearchParams();
@@ -133,6 +190,9 @@ function setupGlobalSearchButton() {
     
     window.location.href = '/tools/token-lookup?' + params.toString();
   });
+  
+  // Initial check
+  updateButtonVisibility();
   
   console.log('Global search button setup complete');
   return true;
@@ -160,6 +220,8 @@ function init() {
       console.log('Search input found:', searchInput);
       console.log('Search input value:', searchInput.value);
       console.log('Search input visible:', searchInput.offsetParent !== null);
+      console.log('Current button:', currentButton);
+      console.log('Last input value:', lastInputValue);
     } else {
       console.log('No search input found');
     }
