@@ -1,9 +1,33 @@
 (() => {
   console.log('DexPaprika search script loading...');
   
-  // Add error handling for the entire script
   try {
     const CSS = `
+      .dp-token-button {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #16A34A;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 1000;
+        display: none;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+      }
+      .dp-token-button:hover {
+        background: #15803D;
+        transform: translateY(-50%) scale(1.05);
+      }
+      .dp-token-button.show {
+        display: block;
+      }
       .dp-lookup{position:relative;max-width:640px;margin:16px 0}
       .dp-lookup input{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
       .dp-suggestions{position:absolute;z-index:40;left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;overflow:hidden;max-height:300px;overflow-y:auto}
@@ -13,8 +37,6 @@
       .dp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
       .dp-actions a,.dp-actions button{padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;background:#fff;cursor:pointer;text-decoration:none;font-size:12px}
       .dp-actions a:hover,.dp-actions button:hover{background:#f9fafb}
-      .dp-global-popover{position:fixed;z-index:9999;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);max-width:400px;padding:12px;font-size:14px}
-      .dp-global-popover .dp-actions{margin-top:8px}
       .dp-loading{text-align:center;padding:20px;color:#6b7280}
       .dp-error{text-align:center;padding:20px;color:#ef4444}
       .dp-no-results{text-align:center;padding:20px;color:#6b7280}
@@ -109,36 +131,93 @@
       }
     }
 
-    function buildActions(token) {
-      console.log('Building actions for token:', token);
-      const links = [
-        { label: 'Price now', href: '/api-reference/tokens/get-a-tokens-latest-data-on-a-network' },
-        { label: 'Top pools', href: '/api-reference/tokens/get-top-x-pools-for-a-token' },
-        { label: 'OHLCV', href: '/api-reference/pools/get-ohlcv-data-for-a-pool-pair' },
-        { label: 'SDK (TS)', href: '/get-started/sdk-ts' }
-      ];
-      const wrap = document.createElement('div');
-      wrap.className = 'dp-actions';
-      for (const l of links) {
-        const a = document.createElement('a');
-        a.href = `${l.href}?symbol=${encodeURIComponent(token.symbol||'')}&chain=${encodeURIComponent(token.chain||'')}&address=${encodeURIComponent(token.address||'')}`;
-        a.textContent = l.label;
-        a.target = '_self';
-        wrap.appendChild(a);
-      }
-      const btn = document.createElement('button');
-      btn.textContent = 'Copy cURL (price)';
-      btn.onclick = () => {
+    async function fetchTokenPrice(token) {
+      try {
         const base = 'https://api.dexpaprika.com';
-        const curl = token.address
-          ? `curl "${base}/networks/${token.chain}/tokens/${token.address}"`
-          : `curl "${base}/networks/${token.chain}/tokens/by-symbol/${token.symbol}"`;
-        navigator.clipboard?.writeText(curl);
-        btn.textContent = 'Copied!';
-        setTimeout(() => (btn.textContent = 'Copy cURL (price)'), 1000);
-      };
-      wrap.appendChild(btn);
-      return wrap;
+        const url = token.address
+          ? `${base}/networks/${token.chain}/tokens/${token.address}`
+          : `${base}/networks/${token.chain}/tokens/by-symbol/${token.symbol}`;
+        
+        console.log('Fetching price from:', url);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        return data;
+      } catch (err) {
+        console.error('Error fetching token price:', err);
+        return null;
+      }
+    }
+
+    function generateTokenPage(token, priceData) {
+      const timestamp = new Date().toISOString();
+      const price = priceData?.price_usd || 'N/A';
+      const volume24h = priceData?.volume_usd_24h || 'N/A';
+      const marketCap = priceData?.market_cap_usd || 'N/A';
+      
+      return `---
+title: "${token.symbol} - ${token.name}"
+sidebarTitle: "${token.symbol} Token Data"
+description: "Real-time data and analytics for ${token.symbol} (${token.name}) on ${token.chain}"
+generated: true
+timestamp: "${timestamp}"
+---
+
+# ${token.symbol} Token Data
+
+## Overview
+
+**Symbol:** ${token.symbol}  
+**Name:** ${token.name}  
+**Chain:** ${token.chain}  
+**Address:** \`${token.address}\`
+
+## Current Market Data
+
+**Price:** $${price}  
+**24h Volume:** $${volume24h}  
+**Market Cap:** $${marketCap}
+
+## Quick Actions
+
+<div class="dp-actions">
+  <a href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" target="_self">Get Latest Price</a>
+  <a href="/api-reference/tokens/get-top-x-pools-for-a-token?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" target="_self">Top Pools</a>
+  <a href="/api-reference/pools/get-ohlcv-data-for-a-pool-pair?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" target="_self">OHLCV Data</a>
+  <a href="/get-started/sdk-ts?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" target="_self">SDK Examples</a>
+</div>
+
+## API Examples
+
+### Get Current Price
+
+\`\`\`bash
+curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}"
+\`\`\`
+
+### Get Top Pools
+
+\`\`\`bash
+curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}/pools"
+\`\`\`
+
+### Get Historical Data
+
+\`\`\`bash
+curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}/ohlcv?start=2024-01-01&end=2024-12-31"
+\`\`\`
+
+## Related Resources
+
+- [DexPaprika API Documentation](/api-reference/introduction)
+- [Getting Started Guide](/get-started/sdk-ts)
+- [Token Lookup Tool](/tools/token-lookup)
+
+---
+
+*This page was automatically generated on ${new Date().toLocaleString()}*
+`;
     }
 
     function mountLookup(container) {
@@ -188,11 +267,48 @@
           results.forEach(t => {
             const btn = document.createElement('button');
             btn.innerHTML = `<strong>${t.symbol}</strong> — ${t.name} · ${t.chain}`;
-            btn.onclick = () => {
+            btn.onclick = async () => {
               console.log('Token selected:', t);
               sugg.style.display = 'none';
-              root.querySelectorAll('.dp-actions').forEach(n => n.remove());
-              root.appendChild(buildActions(t));
+              
+              // Show loading message
+              root.innerHTML = '<div class="dp-loading">Loading token data...</div>';
+              
+              try {
+                // Fetch real-time price data
+                const priceData = await fetchTokenPrice(t);
+                
+                // Generate the MDX content
+                const mdxContent = generateTokenPage(t, priceData);
+                
+                // Create a blob and download it
+                const blob = new Blob([mdxContent], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${t.symbol.toLowerCase()}-token-data.mdx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Show success message
+                root.innerHTML = `
+                  <div style="text-align: center; padding: 20px;">
+                    <h3>✅ Token Data Generated!</h3>
+                    <p>MDX file for <strong>${t.symbol}</strong> has been downloaded.</p>
+                    <p>You can now add this file to your Mintlify docs and it will display real-time data.</p>
+                  </div>
+                `;
+              } catch (err) {
+                console.error('Error generating token page:', err);
+                root.innerHTML = `
+                  <div style="text-align: center; padding: 20px; color: #ef4444;">
+                    <h3>❌ Error</h3>
+                    <p>Failed to generate token data. Please try again.</p>
+                  </div>
+                `;
+              }
             };
             sugg.appendChild(btn);
           });
@@ -223,15 +339,11 @@
       }
     }
 
-    // Global search interception
-    function setupGlobalSearch() {
-      console.log('Setting up global search interception...');
-      let globalPopover = null;
-      let lastQuery = '';
-
-      // Find Mintlify's search input (it might be in different places)
+    // Global search button functionality
+    function setupGlobalSearchButton() {
+      console.log('Setting up global search button...');
+      
       function findSearchInput() {
-        // Try common selectors for Mintlify search
         const selectors = [
           'input[placeholder*="search" i]',
           'input[placeholder*="Search" i]',
@@ -239,129 +351,138 @@
           '.search input',
           '[data-testid="search-input"]',
           'input[aria-label*="search" i]',
-          'input[placeholder*="eth" i]', // Based on the image showing "eth"
+          'input[placeholder*="eth" i]',
           '.search-overlay input',
           '[role="search"] input',
-          // More specific selectors for Mintlify
           '.search-overlay input[type="text"]',
           '.search-overlay input[placeholder]',
-          'input[placeholder*="Search" i]',
-          'input[placeholder*="search" i]',
-          // Try to find any input that might be a search
           'input[placeholder]'
         ];
         
         for (const selector of selectors) {
           const inputs = document.querySelectorAll(selector);
           for (const input of inputs) {
-            if (input && input.offsetParent !== null && input.offsetWidth > 0) { // visible
-              console.log('Found search input with selector:', selector, 'value:', input.value);
+            if (input && input.offsetParent !== null && input.offsetWidth > 0) {
+              console.log('Found search input with selector:', selector);
               return input;
             }
           }
         }
-        console.log('No search input found');
         return null;
       }
 
-      function showGlobalPopover(query, inputElement) {
-        console.log('Showing global popover for query:', query);
-        if (globalPopover) {
-          globalPopover.remove();
-        }
-
-        // Check if query looks like a ticker (2+ chars, alphanumeric)
-        if (query.length < 2 || !/^[a-zA-Z0-9]+$/.test(query)) {
-          console.log('Query does not match ticker pattern:', query);
-          return;
-        }
-
-        // Show loading state
-        globalPopover = document.createElement('div');
-        globalPopover.className = 'dp-global-popover';
-        globalPopover.innerHTML = '<div class="dp-loading">Searching tokens...</div>';
+      function createTokenButton() {
+        const button = document.createElement('button');
+        button.className = 'dp-token-button';
+        button.textContent = 'Looking for token data?';
+        button.style.display = 'none';
         
-        // Position the popover near the search input
-        const rect = inputElement.getBoundingClientRect();
-        globalPopover.style.left = `${rect.left}px`;
-        globalPopover.style.top = `${rect.bottom + 8}px`;
-        document.body.appendChild(globalPopover);
-
-        searchTokens(query).then(results => {
-          if (!globalPopover) return; // Was removed while loading
+        button.addEventListener('click', async () => {
+          const searchInput = findSearchInput();
+          if (!searchInput) return;
           
+          const query = searchInput.value.trim();
+          if (query.length < 2) return;
+          
+          console.log('Token button clicked for query:', query);
+          
+          // Search for tokens
+          const results = await searchTokens(query);
           if (results.length === 0) {
-            globalPopover.innerHTML = '<div class="dp-no-results">No tokens found</div>';
-            setTimeout(() => {
-              if (globalPopover && globalPopover.innerHTML.includes('No tokens found')) {
-                globalPopover.remove();
-                globalPopover = null;
-              }
-            }, 2000);
+            alert('No tokens found for "' + query + '"');
             return;
           }
-
-          globalPopover.innerHTML = '';
           
-          const title = document.createElement('div');
-          title.innerHTML = `<strong>Token suggestions for "${query}"</strong>`;
-          title.style.marginBottom = '8px';
-          globalPopover.appendChild(title);
-
-          results.forEach(t => {
-            const btn = document.createElement('button');
-            btn.innerHTML = `<strong>${t.symbol}</strong> — ${t.name} · ${t.chain}`;
-            btn.style.cssText = 'display:block;width:100%;padding:8px;border:0;background:#fff;cursor:pointer;text-align:left;border-bottom:1px solid #f3f4f6;font-size:14px';
-            btn.onclick = () => {
-              console.log('Global token selected:', t);
-              globalPopover.remove();
-              globalPopover = null;
-              // Navigate to the token lookup page with the selected token
-              window.location.href = `/tools/token-lookup?symbol=${encodeURIComponent(t.symbol)}&chain=${encodeURIComponent(t.chain)}&address=${encodeURIComponent(t.address||'')}`;
-            };
-            globalPopover.appendChild(btn);
-          });
-
-          const actions = buildActions(results[0]);
-          actions.style.marginTop = '8px';
-          globalPopover.appendChild(actions);
-        }).catch(err => {
-          console.error('Global search error:', err);
-          if (globalPopover) {
-            globalPopover.innerHTML = '<div class="dp-error">Failed to load tokens</div>';
-            setTimeout(() => {
-              if (globalPopover && globalPopover.innerHTML.includes('Failed to load tokens')) {
-                globalPopover.remove();
-                globalPopover = null;
-              }
-            }, 2000);
+          // If multiple results, let user choose
+          if (results.length > 1) {
+            const tokenNames = results.map(t => `${t.symbol} (${t.name})`).join('\n');
+            const choice = prompt(`Multiple tokens found for "${query}". Choose one:\n\n${tokenNames}\n\nEnter the symbol (e.g., SOL):`);
+            if (!choice) return;
+            
+            const selectedToken = results.find(t => t.symbol.toLowerCase() === choice.toLowerCase());
+            if (!selectedToken) {
+              alert('Invalid selection');
+              return;
+            }
+            
+            await generateAndDownloadTokenPage(selectedToken);
+          } else {
+            await generateAndDownloadTokenPage(results[0]);
           }
         });
+        
+        return button;
       }
 
-      function hideGlobalPopover() {
-        if (globalPopover) {
-          globalPopover.remove();
-          globalPopover = null;
+      async function generateAndDownloadTokenPage(token) {
+        try {
+          // Show loading
+          const button = document.querySelector('.dp-token-button');
+          if (button) {
+            button.textContent = 'Loading...';
+            button.disabled = true;
+          }
+          
+          // Fetch real-time price data
+          const priceData = await fetchTokenPrice(token);
+          
+          // Generate the MDX content
+          const mdxContent = generateTokenPage(token, priceData);
+          
+          // Create a blob and download it
+          const blob = new Blob([mdxContent], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${token.symbol.toLowerCase()}-token-data.mdx`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          // Show success message
+          alert(`✅ Token data for ${token.symbol} has been downloaded!\n\nYou can now add this MDX file to your Mintlify docs.`);
+          
+        } catch (err) {
+          console.error('Error generating token page:', err);
+          alert('❌ Failed to generate token data. Please try again.');
+        } finally {
+          // Reset button
+          const button = document.querySelector('.dp-token-button');
+          if (button) {
+            button.textContent = 'Looking for token data?';
+            button.disabled = false;
+          }
         }
       }
 
-      // Watch for search input changes
       function watchSearchInput() {
         const searchInput = findSearchInput();
         if (!searchInput) return;
 
-        console.log('Watching search input for changes');
+        // Check if button already exists
+        let button = document.querySelector('.dp-token-button');
+        if (!button) {
+          button = createTokenButton();
+          document.body.appendChild(button);
+        }
+
+        // Position the button
+        const rect = searchInput.getBoundingClientRect();
+        button.style.left = `${rect.right - 200}px`;
+        button.style.top = `${rect.top + (rect.height - 30) / 2}px`;
+
         let lastValue = '';
         const checkInput = () => {
           const currentValue = searchInput.value.trim();
           if (currentValue !== lastValue) {
             lastValue = currentValue;
             console.log('Search input value changed to:', currentValue);
+            
             if (currentValue.length >= 2) {
-              showGlobalPopover(currentValue, searchInput);
+              button.classList.add('show');
             } else {
-              hideGlobalPopover();
+              button.classList.remove('show');
             }
           }
         };
@@ -370,26 +491,12 @@
         searchInput.addEventListener('input', checkInput);
         searchInput.addEventListener('focus', checkInput);
         searchInput.addEventListener('keyup', checkInput);
-        
-        // Hide popover when clicking outside
-        document.addEventListener('click', (e) => {
-          if (!globalPopover?.contains(e.target) && !searchInput.contains(e.target)) {
-            hideGlobalPopover();
-          }
-        });
-
-        // Hide on escape key
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape') {
-            hideGlobalPopover();
-          }
-        });
       }
 
       // Try to find search input immediately and also watch for it
       watchSearchInput();
       
-      // Also watch for dynamic changes (Mintlify might load search later)
+      // Also watch for dynamic changes
       const observer = new MutationObserver(() => {
         watchSearchInput();
       });
@@ -409,8 +516,8 @@
         console.log('Found', containers.length, 'lookup containers');
         containers.forEach(mountLookup);
         
-        // Setup global search interception
-        setupGlobalSearch();
+        // Setup global search button
+        setupGlobalSearchButton();
         
         console.log('DexPaprika search functionality initialized successfully');
       } catch (err) {
