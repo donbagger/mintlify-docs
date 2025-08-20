@@ -13,11 +13,12 @@
       "measurementId": "G-1WLLWHVKMG"
     }
   },
-                "customScripts": [
-                "/dp-search-button.js",
-                "/dp-token-results.js",
-                "/token-search-api.js"
-              ],
+                  "customScripts": [
+    "/token-search-api.js"
+  ],
+  "customStyles": [
+    "/token-search-styles.css"
+  ],
   "contextual": {
     "options": [
       "copy",
@@ -79,7 +80,6 @@
                         "group": "Tools",
                         "pages": [
                           "/tools/token-coverage-checker",
-                          "/tools/token-search",
                           "/tools/token-lookup"
                         ]
                       }

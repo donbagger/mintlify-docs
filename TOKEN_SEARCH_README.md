@@ -9,9 +9,13 @@ The token search feature allows users to quickly check if tokens are available i
 - **BD teams** who want to check token availability before client discussions
 - **Developers** who need to quickly look up token information
 
+**Production Ready**: The script automatically detects the environment and uses the appropriate API endpoint:
+- **Development**: Uses local proxy server to bypass CORS issues
+- **Production**: Uses direct DexPaprika API calls
+
 ## Files Created
 
-### 1. `/tools/token-search.mdx`
+### 1. `/tools/token-coverage-checker.mdx`
 The main interactive search page in the Mintlify documentation.
 
 **Features:**
@@ -25,26 +29,43 @@ The main interactive search page in the Mintlify documentation.
 JavaScript library that handles API integration.
 
 **Features:**
-- Direct integration with `/search` endpoint
+- Direct integration with `/search` endpoint via local proxy
 - Smart caching to improve performance
 - Error handling with graceful fallbacks
 - Extracts token data from API responses
 
-### 3. `/test-token-search.html`
-Standalone test page for development and testing.
+### 3. `/token-search-styles.css`
+CSS styles for the search interface.
 
 **Features:**
-- Complete implementation outside of Mintlify
-- Easy to test API functionality
-- Debug console logging
+- Responsive design that matches Mintlify theme
+- Clean, modern UI components
+- Proper styling for search results and loading states
+
+### 4. `/server/` directory
+Server-side files for development and testing.
+
+**Contents:**
+- `api-proxy.js` - Node.js proxy server to bypass CORS
+- `package.json` - Node.js dependencies
+- `debug-api.html` - API testing page
+- `test-token-search.html` - Standalone test page
 
 ## API Integration
 
 The search uses the DexPaprika `/search` endpoint:
 
+**Production:**
 ```
 GET https://api.dexpaprika.com/search?query={search_term}
 ```
+
+**Development (via proxy):**
+```
+GET http://localhost:3002/api/search?query={search_term}
+```
+
+The script automatically detects the environment and uses the appropriate endpoint.
 
 **Response includes:**
 - `tokens[]` - Array of matching tokens
@@ -69,7 +90,7 @@ GET https://api.dexpaprika.com/search?query={search_term}
 ## Usage
 
 ### For Users:
-1. Navigate to `/tools/token-search` in the documentation
+1. Navigate to `/tools/token-coverage-checker` in the documentation
 2. Enter a token symbol (e.g., "SOL", "USDC") or name (e.g., "Solana", "Bitcoin")
 3. Click "Search" or press Enter
 4. Review results showing token availability and market data
@@ -88,6 +109,21 @@ GET https://api.dexpaprika.com/search?query={search_term}
 - `WETH` - Finds Wrapped Ether
 - `Bitcoin` - Finds Bitcoin-related tokens
 - `Ethereum` - Finds Ethereum-related tokens
+
+## Setup
+
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
+
+### Installation
+1. Navigate to the server directory: `cd server`
+2. Install dependencies: `npm install`
+3. Start the proxy server: `./start-proxy.sh` (or `node api-proxy.js`)
+4. In a new terminal, start Mintlify dev server: `mintlify dev`
+5. Navigate to `/tools/token-coverage-checker` in your browser
+
+**Note:** The proxy server must be running on port 3002 for the token search to work properly.
 
 ## Technical Details
 

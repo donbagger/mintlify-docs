@@ -1,3 +1,6 @@
+// Token Coverage Checker - Works in both development and production
+// Development: Uses local proxy server (localhost:3002) to bypass CORS
+// Production: Uses direct DexPaprika API (https://api.dexpaprika.com)
 // Only run this script if we're on the token coverage checker page
 if (window.location.pathname.includes('token-coverage-checker')) {
   console.log('🚀 Initializing Token Coverage Checker...');
@@ -5,8 +8,10 @@ if (window.location.pathname.includes('token-coverage-checker')) {
   // Token Search API Integration
   class TokenSearchAPI {
     constructor() {
-      // Use local proxy to avoid CORS issues
-      this.baseURL = 'http://localhost:3002/api';
+      // Use direct API for production, local proxy for development
+      this.baseURL = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3002/api' 
+        : 'https://api.dexpaprika.com';
       this.cache = new Map();
       this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
     }
@@ -23,8 +28,12 @@ if (window.location.pathname.includes('token-coverage-checker')) {
           return cached;
         }
         
-        console.log('🌐 Making API call to:', `${this.baseURL}/search?query=${encodeURIComponent(query)}`);
-        const response = await fetch(`${this.baseURL}/search?query=${encodeURIComponent(query)}`);
+        const endpoint = this.baseURL.includes('localhost') 
+          ? `${this.baseURL}/search?query=${encodeURIComponent(query)}`
+          : `${this.baseURL}/search?query=${encodeURIComponent(query)}`;
+        
+        console.log('🌐 Making API call to:', endpoint);
+        const response = await fetch(endpoint);
         
         console.log('📡 Response status:', response.status);
         console.log('📡 Response ok:', response.ok);
