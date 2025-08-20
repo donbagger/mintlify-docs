@@ -755,6 +755,30 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         };
         document.body.appendChild(debugButton);
         
+        // Add template processing button if on template page
+        if (window.location.pathname.includes('/tools/token-template')) {
+          const templateButton = document.createElement('button');
+          templateButton.style.cssText = `
+            position: fixed !important;
+            top: 50px !important;
+            right: 10px !important;
+            background: #3b82f6 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 4px !important;
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+            cursor: pointer !important;
+            z-index: 100000 !important;
+          `;
+          templateButton.textContent = 'Process Template';
+          templateButton.onclick = () => {
+            console.log('Manual template processing triggered');
+            processTokenTemplate();
+          };
+          document.body.appendChild(templateButton);
+        }
+        
         // Check if we're on the token lookup page with URL parameters
         if (window.location.pathname.includes('/tools/token-lookup')) {
           const urlParams = new URLSearchParams(window.location.search);
@@ -785,6 +809,18 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         if (window.location.pathname.includes('/tools/token-template')) {
           console.log('On token template page, processing template...');
           processTokenTemplate();
+          
+          // Also try processing after a short delay to ensure DOM is fully loaded
+          setTimeout(() => {
+            console.log('Delayed template processing...');
+            processTokenTemplate();
+          }, 500);
+          
+          // And try again after a longer delay
+          setTimeout(() => {
+            console.log('Final delayed template processing...');
+            processTokenTemplate();
+          }, 2000);
         }
         
         // Mount page-specific widgets
@@ -918,6 +954,7 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
 
     function processTokenTemplate() {
       try {
+        console.log('=== PROCESSING TOKEN TEMPLATE ===');
         const urlParams = new URLSearchParams(window.location.search);
         
         // Get token data from URL parameters
@@ -932,7 +969,9 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           query: urlParams.get('query') || ''
         };
         
-        console.log('Processing template with token data:', tokenData);
+        console.log('Token data from URL:', tokenData);
+        console.log('Current document title:', document.title);
+        console.log('Current document body:', document.body.innerHTML.substring(0, 500));
         
         // Replace placeholders in the entire document
         const replacements = {
@@ -946,43 +985,66 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           '{{GENERATED_DATE}}': new Date().toLocaleString()
         };
         
+        console.log('Replacements to apply:', replacements);
+        
         // Replace in document title
+        const originalTitle = document.title;
         document.title = document.title.replace(/{{TOKEN_SYMBOL}}/g, tokenData.symbol)
                                       .replace(/{{TOKEN_NAME}}/g, tokenData.name);
+        console.log('Title updated:', originalTitle, '->', document.title);
         
-        // Replace in all text content
-        const walker = document.createTreeWalker(
-          document.body,
-          NodeFilter.SHOW_TEXT,
-          null,
-          false
-        );
+        // Replace in all text content using a more direct approach
+        const allElements = document.querySelectorAll('*');
+        console.log('Found', allElements.length, 'elements to process');
         
-        const textNodes = [];
-        let node;
-        while (node = walker.nextNode()) {
-          textNodes.push(node);
-        }
+        allElements.forEach(element => {
+          if (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE) {
+            // Element contains only text
+            let text = element.textContent;
+            let originalText = text;
+            
+            Object.entries(replacements).forEach(([placeholder, value]) => {
+              text = text.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+            });
+            
+            if (text !== originalText) {
+              console.log('Replaced text in element:', originalText, '->', text);
+              element.textContent = text;
+            }
+          }
+        });
         
-        textNodes.forEach(textNode => {
-          let text = textNode.textContent;
+        // Also replace in innerHTML for elements that might have mixed content
+        const htmlElements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, div, span, a, code, pre');
+        htmlElements.forEach(element => {
+          let html = element.innerHTML;
+          let originalHtml = html;
+          
           Object.entries(replacements).forEach(([placeholder, value]) => {
-            text = text.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
+            html = html.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
           });
-          if (text !== textNode.textContent) {
-            textNode.textContent = text;
+          
+          if (html !== originalHtml) {
+            console.log('Replaced HTML in element:', element.tagName, originalHtml, '->', html);
+            element.innerHTML = html;
           }
         });
         
         // Replace in HTML attributes (href, etc.)
-        const elements = document.querySelectorAll('a[href*="{{"], a[href*="}}"]');
-        elements.forEach(element => {
+        const elementsWithHref = document.querySelectorAll('a[href*="{{"], a[href*="}}"]');
+        console.log('Found', elementsWithHref.length, 'elements with href placeholders');
+        
+        elementsWithHref.forEach(element => {
           let href = element.getAttribute('href');
           if (href) {
+            let originalHref = href;
             Object.entries(replacements).forEach(([placeholder, value]) => {
               href = href.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
             });
-            element.setAttribute('href', href);
+            if (href !== originalHref) {
+              console.log('Updated href:', originalHref, '->', href);
+              element.setAttribute('href', href);
+            }
           }
         });
         
@@ -990,20 +1052,25 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         const metaDescription = document.querySelector('meta[name="description"]');
         if (metaDescription) {
           let description = metaDescription.getAttribute('content');
+          let originalDescription = description;
           Object.entries(replacements).forEach(([placeholder, value]) => {
             description = description.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value);
           });
-          metaDescription.setAttribute('content', description);
+          if (description !== originalDescription) {
+            console.log('Updated meta description:', originalDescription, '->', description);
+            metaDescription.setAttribute('content', description);
+          }
         }
         
         console.log('Template processing completed');
+        console.log('Final document body preview:', document.body.innerHTML.substring(0, 1000));
         
         // Show a subtle notification
         showNotification(`✅ ${tokenData.symbol} data loaded successfully!`, 'success');
         
       } catch (err) {
         console.error('Error processing token template:', err);
-        showNotification('❌ Error loading token data', 'error');
+        showNotification('❌ Error loading token data: ' + err.message, 'error');
       }
     }
 
