@@ -440,10 +440,14 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
           transition: all 0.2s ease !important;
           min-width: 200px !important;
+          max-width: 300px !important;
           text-align: center !important;
           pointer-events: auto !important;
           opacity: 1 !important;
           visibility: visible !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
         `;
         
         button.addEventListener('click', async () => {
@@ -542,18 +546,19 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
 
         // Position the button relative to the search input
         const rect = searchInput.getBoundingClientRect();
-        const buttonWidth = 200;
+        const buttonWidth = Math.min(300, Math.max(200, button.offsetWidth || 200));
         const buttonHeight = 30;
         
-        // Position to the right of the search input, aligned with the search bar
+        // Position to the right of the search input, slightly higher
         button.style.left = `${rect.right - buttonWidth - 20}px`;
-        button.style.top = `${rect.top + (rect.height - buttonHeight) / 2}px`;
+        button.style.top = `${rect.top - 10}px`; // Move up by 10px
         button.style.transform = 'none'; // Reset any transform
         
         console.log('Button positioned at:', {
           left: button.style.left,
           top: button.style.top,
-          searchInputRect: rect
+          searchInputRect: rect,
+          buttonWidth: buttonWidth
         });
 
         let lastValue = '';
@@ -564,6 +569,9 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             console.log('Search input value changed to:', currentValue);
             
             if (currentValue.length >= 2) {
+              // Update button text with user input
+              button.textContent = `Looking for "${currentValue.toUpperCase()}" token data?`;
+              
               // Force show the button with explicit styles
               button.style.display = 'block';
               button.style.opacity = '1';
@@ -574,7 +582,8 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
                 display: button.style.display,
                 opacity: button.style.opacity,
                 visibility: button.style.visibility,
-                zIndex: button.style.zIndex
+                zIndex: button.style.zIndex,
+                text: button.textContent
               });
             } else {
               button.style.display = 'none';
