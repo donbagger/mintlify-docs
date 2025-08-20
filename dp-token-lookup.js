@@ -523,9 +523,10 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         const buttonWidth = 200;
         const buttonHeight = 30;
         
-        // Position to the right of the search input
-        button.style.left = `${rect.right - buttonWidth - 10}px`;
+        // Position to the right of the search input, aligned with the search bar
+        button.style.left = `${rect.right - buttonWidth - 20}px`;
         button.style.top = `${rect.top + (rect.height - buttonHeight) / 2}px`;
+        button.style.transform = 'none'; // Reset any transform
         
         console.log('Button positioned at:', {
           left: button.style.left,
@@ -574,9 +575,20 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         subtree: true
       });
       
+      // Watch for URL changes (Mintlify might use client-side routing)
+      let lastUrl = location.href;
+      new MutationObserver(() => {
+        const url = location.href;
+        if (url !== lastUrl) {
+          lastUrl = url;
+          console.log('URL changed, re-initializing search detection');
+          setTimeout(() => watchSearchInput(), 100);
+        }
+      }).observe(document, { subtree: true, childList: true });
+      
       // Also try periodically in case the search input loads after the observer
       let attempts = 0;
-      const maxAttempts = 10;
+      const maxAttempts = 20; // Increased attempts
       const interval = setInterval(() => {
         attempts++;
         console.log(`Attempt ${attempts} to find search input...`);
@@ -591,7 +603,16 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             console.log('Failed to find search input after', maxAttempts, 'attempts');
           }
         }
-      }, 1000);
+      }, 500); // Reduced interval to 500ms for faster detection
+      
+      // Also watch for keyboard events that might open search
+      document.addEventListener('keydown', (e) => {
+        // Check if Ctrl+K or Cmd+K was pressed (common search shortcuts)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+          console.log('Search shortcut detected, checking for search input...');
+          setTimeout(() => watchSearchInput(), 100);
+        }
+      });
     }
 
     function init() {
@@ -615,15 +636,9 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             console.log('Search input value:', searchInput.value);
             console.log('Search input rect:', searchInput.getBoundingClientRect());
             
-            // Force show the button
-            const button = document.querySelector('.dp-token-button');
-            if (button) {
-              button.style.display = 'block';
-              button.style.left = '50%';
-              button.style.top = '50%';
-              button.style.transform = 'translate(-50%, -50%)';
-              console.log('Button forced to show');
-            }
+            // Trigger the watch function to properly position the button
+            setupGlobalSearchButton();
+            console.log('Search button setup triggered');
           } else {
             console.log('No search input found');
             alert('No search input found. Check console for details.');
