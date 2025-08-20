@@ -4,29 +4,47 @@
   try {
     const CSS = `
       .dp-token-button {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
+        position: fixed;
         background: #16A34A;
         color: white;
         border: none;
         border-radius: 6px;
-        padding: 6px 12px;
-        font-size: 12px;
+        padding: 8px 16px;
+        font-size: 14px;
         cursor: pointer;
-        z-index: 1000;
+        z-index: 9999;
         display: none;
         font-weight: 500;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         transition: all 0.2s ease;
+        min-width: 200px;
+        text-align: center;
       }
       .dp-token-button:hover {
         background: #15803D;
-        transform: translateY(-50%) scale(1.05);
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
       }
       .dp-token-button.show {
         display: block;
+      }
+      .dp-token-button:disabled {
+        background: #6b7280;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .dp-debug-button {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        z-index: 10000;
       }
       .dp-lookup{position:relative;max-width:640px;margin:16px 0}
       .dp-lookup input{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
@@ -340,42 +358,71 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
     }
 
     // Global search button functionality
+    function findSearchInput() {
+      // More comprehensive selectors for Mintlify search
+      const selectors = [
+        // Mintlify specific selectors
+        '.search-overlay input[type="text"]',
+        '.search-overlay input[placeholder]',
+        '.search-overlay input',
+        '[data-testid="search-input"]',
+        '[data-testid="search"] input',
+        // General search selectors
+        'input[placeholder*="search" i]',
+        'input[placeholder*="Search" i]',
+        'input[type="search"]',
+        '.search input',
+        'input[aria-label*="search" i]',
+        'input[placeholder*="eth" i]',
+        '[role="search"] input',
+        // Fallback - any input with placeholder
+        'input[placeholder]',
+        // Last resort - any input
+        'input'
+      ];
+      
+      console.log('Searching for input elements...');
+      for (const selector of selectors) {
+        const inputs = document.querySelectorAll(selector);
+        console.log(`Selector "${selector}" found ${inputs.length} elements`);
+        
+        for (const input of inputs) {
+          // Check if input is visible and has reasonable dimensions
+          const rect = input.getBoundingClientRect();
+          const isVisible = input.offsetParent !== null && 
+                          rect.width > 100 && 
+                          rect.height > 20 &&
+                          rect.top > 0 &&
+                          rect.left > 0;
+          
+          if (isVisible) {
+            console.log('Found visible search input:', {
+              selector,
+              value: input.value,
+              placeholder: input.placeholder,
+              rect: rect,
+              classes: input.className,
+              id: input.id
+            });
+            return input;
+          }
+        }
+      }
+      
+      console.log('No suitable search input found');
+      return null;
+    }
+
     function setupGlobalSearchButton() {
       console.log('Setting up global search button...');
       
-      function findSearchInput() {
-        const selectors = [
-          'input[placeholder*="search" i]',
-          'input[placeholder*="Search" i]',
-          'input[type="search"]',
-          '.search input',
-          '[data-testid="search-input"]',
-          'input[aria-label*="search" i]',
-          'input[placeholder*="eth" i]',
-          '.search-overlay input',
-          '[role="search"] input',
-          '.search-overlay input[type="text"]',
-          '.search-overlay input[placeholder]',
-          'input[placeholder]'
-        ];
-        
-        for (const selector of selectors) {
-          const inputs = document.querySelectorAll(selector);
-          for (const input of inputs) {
-            if (input && input.offsetParent !== null && input.offsetWidth > 0) {
-              console.log('Found search input with selector:', selector);
-              return input;
-            }
-          }
-        }
-        return null;
-      }
-
       function createTokenButton() {
         const button = document.createElement('button');
         button.className = 'dp-token-button';
         button.textContent = 'Looking for token data?';
         button.style.display = 'none';
+        button.style.position = 'fixed'; // Use fixed positioning
+        button.style.zIndex = '9999'; // Ensure it's on top
         
         button.addEventListener('click', async () => {
           const searchInput = findSearchInput();
@@ -458,19 +505,33 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
 
       function watchSearchInput() {
         const searchInput = findSearchInput();
-        if (!searchInput) return;
+        if (!searchInput) {
+          console.log('No search input found, will retry...');
+          return;
+        }
 
         // Check if button already exists
         let button = document.querySelector('.dp-token-button');
         if (!button) {
           button = createTokenButton();
           document.body.appendChild(button);
+          console.log('Token button created and added to DOM');
         }
 
-        // Position the button
+        // Position the button relative to the search input
         const rect = searchInput.getBoundingClientRect();
-        button.style.left = `${rect.right - 200}px`;
-        button.style.top = `${rect.top + (rect.height - 30) / 2}px`;
+        const buttonWidth = 200;
+        const buttonHeight = 30;
+        
+        // Position to the right of the search input
+        button.style.left = `${rect.right - buttonWidth - 10}px`;
+        button.style.top = `${rect.top + (rect.height - buttonHeight) / 2}px`;
+        
+        console.log('Button positioned at:', {
+          left: button.style.left,
+          top: button.style.top,
+          searchInputRect: rect
+        });
 
         let lastValue = '';
         const checkInput = () => {
@@ -481,8 +542,10 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             
             if (currentValue.length >= 2) {
               button.classList.add('show');
+              console.log('Button should now be visible');
             } else {
               button.classList.remove('show');
+              console.log('Button should now be hidden');
             }
           }
         };
@@ -491,12 +554,17 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         searchInput.addEventListener('input', checkInput);
         searchInput.addEventListener('focus', checkInput);
         searchInput.addEventListener('keyup', checkInput);
+        
+        // Also check immediately
+        checkInput();
+        
+        console.log('Event listeners attached to search input');
       }
 
       // Try to find search input immediately and also watch for it
       watchSearchInput();
       
-      // Also watch for dynamic changes
+      // Also watch for dynamic changes with more frequent checks
       const observer = new MutationObserver(() => {
         watchSearchInput();
       });
@@ -505,12 +573,64 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         childList: true,
         subtree: true
       });
+      
+      // Also try periodically in case the search input loads after the observer
+      let attempts = 0;
+      const maxAttempts = 10;
+      const interval = setInterval(() => {
+        attempts++;
+        console.log(`Attempt ${attempts} to find search input...`);
+        
+        const searchInput = findSearchInput();
+        if (searchInput || attempts >= maxAttempts) {
+          clearInterval(interval);
+          if (searchInput) {
+            console.log('Search input found on attempt', attempts);
+            watchSearchInput();
+          } else {
+            console.log('Failed to find search input after', maxAttempts, 'attempts');
+          }
+        }
+      }, 1000);
     }
 
     function init() {
       console.log('Initializing DexPaprika search functionality...');
       
       try {
+        // Add debug button
+        const debugButton = document.createElement('button');
+        debugButton.className = 'dp-debug-button';
+        debugButton.textContent = 'Debug Search';
+        debugButton.onclick = () => {
+          console.log('=== DEBUG INFO ===');
+          console.log('Document ready state:', document.readyState);
+          console.log('All inputs on page:', document.querySelectorAll('input').length);
+          console.log('Search inputs found:', document.querySelectorAll('input[placeholder*="search"], input[type="search"], .search input').length);
+          
+          // Try to find search input manually
+          const searchInput = findSearchInput();
+          if (searchInput) {
+            console.log('Search input found:', searchInput);
+            console.log('Search input value:', searchInput.value);
+            console.log('Search input rect:', searchInput.getBoundingClientRect());
+            
+            // Force show the button
+            const button = document.querySelector('.dp-token-button');
+            if (button) {
+              button.style.display = 'block';
+              button.style.left = '50%';
+              button.style.top = '50%';
+              button.style.transform = 'translate(-50%, -50%)';
+              console.log('Button forced to show');
+            }
+          } else {
+            console.log('No search input found');
+            alert('No search input found. Check console for details.');
+          }
+        };
+        document.body.appendChild(debugButton);
+        
         // Mount page-specific widgets
         const containers = document.querySelectorAll('#dp-token-lookup');
         console.log('Found', containers.length, 'lookup containers');
