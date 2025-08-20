@@ -1,0 +1,761 @@
+---
+title: "Token Coverage Checker"
+sidebarTitle: "Token Coverage"
+description: "Check if your tokens are available in our API - perfect for BD teams and non-technical users"
+---
+
+# Token Coverage Checker
+
+Use this tool to quickly check if your tokens are available in our API. Simply enter a token symbol, name, or address to see real-time coverage information.
+
+<div id="token-search-container">
+  <div class="search-section">
+    <div class="search-input-group">
+      <input 
+        type="text" 
+        id="token-search-input" 
+        placeholder="Enter token symbol (e.g., SOL, USDC) or name (e.g., Solana, Bitcoin)"
+        class="search-input"
+      />
+      <button id="search-button" class="search-button">
+        <span class="search-icon">🔍</span>
+        Search
+      </button>
+    </div>
+    
+    <div class="search-tips">
+      <p><strong>💡 Search Tips:</strong></p>
+      <ul>
+        <li>Try token symbols: <code>SOL</code>, <code>USDC</code>, <code>WETH</code></li>
+        <li>Try token names: <code>Solana</code>, <code>Bitcoin</code>, <code>Ethereum</code></li>
+        <li>Try partial matches: <code>USD</code> will find USDC, USDT, etc.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="search-results" class="results-section" style="display: none;">
+    <div class="results-header">
+      <h3 id="results-title">Search Results</h3>
+      <p id="results-subtitle"></p>
+    </div>
+    
+    <div id="loading-spinner" class="loading-spinner" style="display: none;">
+      <div class="spinner"></div>
+      <p>Searching for tokens...</p>
+    </div>
+    
+    <div id="results-table-container" class="table-container">
+      <table id="results-table" class="results-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Network</th>
+            <th>Address</th>
+            <th>Market Data</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="results-table-body">
+        </tbody>
+      </table>
+    </div>
+    
+    <div id="no-results" class="no-results" style="display: none;">
+      <div class="no-results-content">
+        <h4>❌ No tokens found</h4>
+        <p>We couldn't find any tokens matching your search. Try:</p>
+        <ul>
+          <li>Checking the spelling</li>
+          <li>Using a different token symbol</li>
+          <li>Searching by token name instead</li>
+        </ul>
+        <p><strong>Need help?</strong> Contact our BD team or check our <a href="/api-reference/introduction">API documentation</a>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Search Container */
+#token-search-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+/* Search Section */
+.search-section {
+  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.search-input-group {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.search-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-button:hover {
+  background: var(--color-dark);
+}
+
+.search-button:disabled {
+  background: var(--color-border);
+  cursor: not-allowed;
+}
+
+.search-icon {
+  font-size: 14px;
+}
+
+.search-tips {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.search-tips p {
+  margin: 0 0 12px 0;
+  font-weight: 600;
+}
+
+.search-tips ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.search-tips li {
+  margin-bottom: 4px;
+  color: var(--color-text-secondary);
+}
+
+.search-tips code {
+  background: var(--color-background-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Results Section */
+.results-section {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.results-header {
+  background: var(--color-background-secondary);
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.results-header h3 {
+  margin: 0 0 4px 0;
+  color: var(--color-text-primary);
+}
+
+.results-header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-border);
+  border-radius: 50%;
+  border-top-color: var(--color-primary);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Results Table */
+.table-container {
+  overflow-x: auto;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.results-table th {
+  background: var(--color-background-secondary);
+  padding: 16px 20px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.results-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.results-table tr:hover {
+  background: var(--color-background-secondary);
+}
+
+.token-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.token-symbol {
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 16px;
+}
+
+.token-name {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.network-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.network-ethereum {
+  background: #627eea;
+  color: white;
+}
+
+.network-solana {
+  background: #9945ff;
+  color: white;
+}
+
+.network-polygon {
+  background: #8247e5;
+  color: white;
+}
+
+.network-arbitrum {
+  background: #28a0f0;
+  color: white;
+}
+
+.network-bsc {
+  background: #f3ba2f;
+  color: white;
+}
+
+.network-base {
+  background: #0052ff;
+  color: white;
+}
+
+.token-address {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  word-break: break-all;
+}
+
+.token-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.token-price {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.token-volume {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.token-liquidity {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+.actions-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid var(--color-border);
+}
+
+.action-btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.action-btn-primary:hover {
+  background: var(--color-dark);
+  color: white;
+  text-decoration: none;
+}
+
+.action-btn-secondary {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.action-btn-secondary:hover {
+  background: var(--color-background-secondary);
+  text-decoration: none;
+}
+
+/* No Results */
+.no-results {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.no-results-content h4 {
+  margin: 0 0 16px 0;
+  color: var(--color-text-primary);
+}
+
+.no-results-content p {
+  margin: 0 0 16px 0;
+  color: var(--color-text-secondary);
+}
+
+.no-results-content ul {
+  text-align: left;
+  display: inline-block;
+  margin: 0 0 20px 0;
+  color: var(--color-text-secondary);
+}
+
+.no-results-content a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.no-results-content a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-input-group {
+    flex-direction: column;
+  }
+  
+  .search-button {
+    justify-content: center;
+  }
+  
+  .results-table th,
+  .results-table td {
+    padding: 12px 16px;
+  }
+  
+  .token-address {
+    font-size: 11px;
+  }
+}
+</style>
+
+<script>
+// Token Search API Integration
+class TokenSearchAPI {
+  constructor() {
+    // Use local proxy to avoid CORS issues
+    this.baseURL = 'http://localhost:3002/api';
+    this.cache = new Map();
+    this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+  }
+
+  // Search for tokens using the global search endpoint
+  async searchTokens(query) {
+    try {
+      console.log(`🔍 Searching for tokens: ${query}`);
+      
+      const cacheKey = `search_${query.toLowerCase()}`;
+      const cached = this.getFromCache(cacheKey);
+      if (cached) {
+        console.log('📦 Using cached results');
+        return cached;
+      }
+      
+      console.log('🌐 Making API call to:', `${this.baseURL}/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch(`${this.baseURL}/search?query=${encodeURIComponent(query)}`);
+      
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('📊 Search API response:', data);
+      console.log('📊 Tokens found:', data.tokens ? data.tokens.length : 0);
+      
+      // Extract tokens from the response
+      const tokens = data.tokens || [];
+      const results = tokens.map(token => ({
+        symbol: token.symbol,
+        name: token.name,
+        chain: token.chain,
+        address: token.id, // The token ID is the address
+        available: true,
+        price: token.price_usd,
+        volume: token.volume_usd,
+        liquidity: token.liquidity_usd,
+        fdv: token.fdv,
+        decimals: token.decimals,
+        totalSupply: token.total_supply
+      }));
+      
+      console.log('✅ Processed results:', results.length, 'tokens');
+      this.setCache(cacheKey, results);
+      return results;
+    } catch (error) {
+      console.error('❌ Error searching tokens:', error);
+      return [];
+    }
+  }
+
+  // Cache management
+  getFromCache(key) {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      return cached.data;
+    }
+    this.cache.delete(key);
+    return null;
+  }
+
+  setCache(key, data) {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  // Clear cache
+  clearCache() {
+    this.cache.clear();
+  }
+}
+
+// Local search fallback function
+function searchTokensLocal(query) {
+  const tokenDatabase = [
+    {
+      symbol: "SOL",
+      name: "Solana",
+      chain: "solana",
+      address: "So11111111111111111111111111111111111111112",
+      available: true
+    },
+    {
+      symbol: "USDC",
+      name: "USD Coin",
+      chain: "ethereum",
+      address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      available: true
+    },
+    {
+      symbol: "USDC",
+      name: "USD Coin",
+      chain: "solana",
+      address: "Es9vMFrzaCER2kJ8U1L8vMcbA5sX6Phn7ZdZ2m5W861",
+      available: true
+    },
+    {
+      symbol: "WETH",
+      name: "Wrapped Ether",
+      chain: "ethereum",
+      address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      available: true
+    },
+    {
+      symbol: "WBTC",
+      name: "Wrapped Bitcoin",
+      chain: "ethereum",
+      address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      available: true
+    },
+    {
+      symbol: "BONK",
+      name: "Bonk",
+      chain: "solana",
+      address: "DezXAZ8z7P5M5VKsTR5VYg5t6sQf5CqZ3k8sEzsZsP1",
+      available: true
+    },
+    {
+      symbol: "USDT",
+      name: "Tether USD",
+      chain: "ethereum",
+      address: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      available: true
+    },
+    {
+      symbol: "USDT",
+      name: "Tether USD",
+      chain: "solana",
+      address: "Es9vMFrzaCER2kJ8U1L8vMcbA5sX6Phn7ZdZ2m5W861",
+      available: true
+    }
+  ];
+
+  if (!query || query.trim().length < 1) return [];
+  
+  const searchTerm = query.toLowerCase().trim();
+  
+  return tokenDatabase.filter(token => {
+    return token.symbol.toLowerCase().includes(searchTerm) ||
+           token.name.toLowerCase().includes(searchTerm) ||
+           token.address.toLowerCase().includes(searchTerm);
+  });
+}
+
+// DOM elements
+const searchInput = document.getElementById('token-search-input');
+const searchButton = document.getElementById('search-button');
+const searchResults = document.getElementById('search-results');
+const loadingSpinner = document.getElementById('loading-spinner');
+const resultsTableContainer = document.getElementById('results-table-container');
+const resultsTableBody = document.getElementById('results-table-body');
+const noResults = document.getElementById('no-results');
+const resultsTitle = document.getElementById('results-title');
+const resultsSubtitle = document.getElementById('results-subtitle');
+
+// Global API instance
+window.tokenSearchAPI = new TokenSearchAPI();
+
+// Search function - uses real API with fallback
+async function searchTokens(query) {
+  if (!query || query.trim().length < 1) return [];
+  
+  console.log('🔍 Starting search for:', query);
+  console.log('🔍 window.tokenSearchAPI available:', !!window.tokenSearchAPI);
+  
+  try {
+    // Try to use the real API first
+    if (window.tokenSearchAPI) {
+      console.log('🌐 Using API search...');
+      const results = await window.tokenSearchAPI.searchTokens(query);
+      console.log('✅ API search returned:', results.length, 'results');
+      return results;
+    } else {
+      console.log('⚠️ tokenSearchAPI not available');
+    }
+  } catch (error) {
+    console.warn('❌ API search failed, using fallback:', error);
+  }
+  
+  // Fallback to local search
+  console.log('🔄 Using local search fallback...');
+  const localResults = searchTokensLocal(query);
+  console.log('📦 Local search returned:', localResults.length, 'results');
+  return localResults;
+}
+
+// Display results
+function displayResults(tokens, query) {
+  searchResults.style.display = 'block';
+  loadingSpinner.style.display = 'none';
+  
+  if (tokens.length === 0) {
+    resultsTableContainer.style.display = 'none';
+    noResults.style.display = 'block';
+    resultsTitle.textContent = 'No Results Found';
+    resultsSubtitle.textContent = `No tokens found matching "${query}"`;
+    return;
+  }
+  
+  resultsTableContainer.style.display = 'block';
+  noResults.style.display = 'none';
+  resultsTitle.textContent = `Found ${tokens.length} Token${tokens.length > 1 ? 's' : ''}`;
+  resultsSubtitle.textContent = `Results for "${query}"`;
+  
+  // Clear previous results
+  resultsTableBody.innerHTML = '';
+  
+  // Add results to table
+  tokens.forEach(token => {
+    const row = document.createElement('tr');
+    
+    const networkClass = `network-${token.chain}`;
+    
+    // Format price and volume if available
+    const price = token.price ? `$${parseFloat(token.price).toFixed(6)}` : 'N/A';
+    const volume = token.volume ? `$${parseFloat(token.volume).toLocaleString()}` : 'N/A';
+    const liquidity = token.liquidity ? `$${parseFloat(token.liquidity).toLocaleString()}` : 'N/A';
+    
+    row.innerHTML = `
+      <td>
+        <div class="token-info">
+          <span class="token-symbol">${token.symbol}</span>
+          <span class="token-name">${token.name}</span>
+        </div>
+      </td>
+      <td>
+        <span class="network-badge ${networkClass}">${token.chain}</span>
+      </td>
+      <td>
+        <span class="token-address">${token.address}</span>
+      </td>
+      <td>
+        <div class="token-stats">
+          <div class="token-price">${price}</div>
+          <div class="token-volume">24h Vol: ${volume}</div>
+          <div class="token-liquidity">Liquidity: ${liquidity}</div>
+        </div>
+      </td>
+      <td>
+        <div class="actions-group">
+          <a href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network" class="action-btn action-btn-primary">
+            View API
+          </a>
+          <a href="/tools/token-lookup?query=${token.symbol}" class="action-btn action-btn-secondary">
+            Details
+          </a>
+        </div>
+      </td>
+    `;
+    
+    resultsTableBody.appendChild(row);
+  });
+}
+
+// Show loading state
+function showLoading() {
+  searchResults.style.display = 'block';
+  loadingSpinner.style.display = 'block';
+  resultsTableContainer.style.display = 'none';
+  noResults.style.display = 'none';
+}
+
+// Handle search
+async function handleSearch() {
+  const query = searchInput.value.trim();
+  
+  if (!query) {
+    alert('Please enter a search term');
+    return;
+  }
+  
+  showLoading();
+  
+  try {
+    const results = await searchTokens(query);
+    displayResults(results, query);
+  } catch (error) {
+    console.error('Search error:', error);
+    displayResults([], query);
+  }
+}
+
+// Event listeners
+searchButton.addEventListener('click', handleSearch);
+searchInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    handleSearch();
+  }
+});
+
+// Auto-focus search input
+searchInput.focus();
+</script>
+
+## How to Use
+
+1. **Enter a token symbol or name** in the search box above
+2. **Click "Search"** or press Enter
+3. **Review the results** to see if your token is available
+4. **Click "View API"** to see the API endpoint for that token
+5. **Click "Details"** for more comprehensive token information
+
+## What You'll See
+
+- **Token Symbol & Name**: The official token identifier
+- **Network**: Which blockchain the token is on (Ethereum, Solana, etc.)
+- **Address**: The contract address for the token
+- **Market Data**: Current price, 24h volume, and liquidity
+- **Actions**: Links to API documentation and detailed information
+
+## For BD Teams
+
+This tool helps you quickly verify token coverage before client discussions. You can:
+
+- **Pre-sales calls**: Check if a client's tokens are supported
+- **Partnership discussions**: Verify coverage for potential partners
+- **Client onboarding**: Ensure all required tokens are available
+- **Market research**: Explore what tokens are currently supported
+
+<Note>
+  **Need to add a new token?** Contact our technical team or check our <a href="/api-reference/introduction">API documentation</a> for integration details.
+</Note>
+
+<Note>
+  **Pro tip:** This search also works in Mintlify's global search bar! Try typing "SOL" or "USDC" in the search bar at the top of any page.
+</Note>

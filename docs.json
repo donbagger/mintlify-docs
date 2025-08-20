@@ -15,7 +15,8 @@
   },
                 "customScripts": [
                 "/dp-search-button.js",
-                "/dp-token-results.js"
+                "/dp-token-results.js",
+                "/token-search-api.js"
               ],
   "contextual": {
     "options": [
@@ -77,6 +78,8 @@
                                 {
                         "group": "Tools",
                         "pages": [
+                          "/tools/token-coverage-checker",
+                          "/tools/token-search",
                           "/tools/token-lookup"
                         ]
                       }

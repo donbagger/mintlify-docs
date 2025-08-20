@@ -1,0 +1,18 @@
+{
+  "name": "dexpaprika-token-search",
+  "version": "1.0.0",
+  "description": "Token search functionality for DexPaprika documentation",
+  "main": "api-proxy.js",
+  "scripts": {
+    "start": "node api-proxy.js",
+    "dev": "node api-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "node-fetch": "^2.7.0"
+  },
+  "keywords": ["dexpaprika", "api", "token", "search"],
+  "author": "DexPaprika Team",
+  "license": "MIT"
+}
