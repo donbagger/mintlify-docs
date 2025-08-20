@@ -462,15 +462,16 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           // Search for tokens
           const results = await searchTokens(query);
           if (results.length === 0) {
-            alert('No tokens found for "' + query + '"');
+            // Show a subtle notification instead of alert
+            showNotification('No tokens found for "' + query + '"', 'error');
             return;
           }
           
-          // If single result, go directly to that token
+          // If single result, show it directly on the page
           if (results.length === 1) {
             const token = results[0];
-            console.log('Single token found, navigating to:', token);
-            await generateAndDownloadTokenPage(token);
+            console.log('Single token found, displaying on page:', token);
+            await displayTokenDataOnPage(token);
             return;
           }
           
@@ -487,7 +488,7 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         return button;
       }
 
-      async function generateAndDownloadTokenPage(token) {
+      async function displayTokenDataOnPage(token) {
         try {
           // Show loading
           const button = document.querySelector('.dp-token-button');
@@ -502,23 +503,19 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           // Generate the MDX content
           const mdxContent = generateTokenPage(token, priceData);
           
-          // Create a blob and download it
-          const blob = new Blob([mdxContent], { type: 'text/markdown' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${token.symbol.toLowerCase()}-token-data.mdx`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+          // Create a temporary div to hold the MDX content
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = mdxContent;
+          
+          // Append the MDX content to the current page's body
+          document.body.appendChild(tempDiv);
           
           // Show success message
-          alert(`✅ Token data for ${token.symbol} has been downloaded!\n\nYou can now add this MDX file to your Mintlify docs.`);
+          showNotification(`✅ Token data for ${token.symbol} has been displayed!`, 'success');
           
         } catch (err) {
-          console.error('Error generating token page:', err);
-          alert('❌ Failed to generate token data. Please try again.');
+          console.error('Error displaying token data on page:', err);
+          showNotification('❌ Failed to display token data. Please try again.', 'error');
         } finally {
           // Reset button
           const button = document.querySelector('.dp-token-button');
@@ -891,8 +888,145 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
     // Global function for generating token pages
     window.generateTokenPage = async function(symbol, chain, address) {
       const token = { symbol, chain, address };
-      await generateAndDownloadTokenPage(token);
+      await displayTokenDataOnPage(token);
     };
+
+    // Notification function for subtle feedback
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed !important;
+        top: 20px !important;
+        right: 20px !important;
+        padding: 12px 16px !important;
+        border-radius: 6px !important;
+        color: white !important;
+        font-size: 14px !important;
+        z-index: 100000 !important;
+        max-width: 300px !important;
+        word-wrap: break-word !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        transition: all 0.3s ease !important;
+        ${type === 'error' ? 'background: #ef4444 !important;' : 'background: #16A34A !important;'}
+      `;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 300);
+      }, 3000);
+    }
+
+    async function displayTokenDataOnPage(token) {
+      try {
+        // Show loading notification
+        showNotification('Loading token data...', 'info');
+        
+        // Fetch real-time price data
+        const priceData = await fetchTokenPrice(token);
+        
+        // Generate the MDX content
+        const mdxContent = generateTokenPage(token, priceData);
+        
+        // Create a modal overlay to display the token data
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
+          background: rgba(0,0,0,0.8) !important;
+          z-index: 99999 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding: 20px !important;
+        `;
+        
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+          background: white !important;
+          border-radius: 8px !important;
+          padding: 24px !important;
+          max-width: 800px !important;
+          max-height: 80vh !important;
+          overflow-y: auto !important;
+          position: relative !important;
+        `;
+        
+        // Add close button
+        const closeButton = document.createElement('button');
+        closeButton.textContent = '×';
+        closeButton.style.cssText = `
+          position: absolute !important;
+          top: 10px !important;
+          right: 15px !important;
+          background: none !important;
+          border: none !important;
+          font-size: 24px !important;
+          cursor: pointer !important;
+          color: #666 !important;
+        `;
+        closeButton.onclick = () => {
+          document.body.removeChild(modal);
+        };
+        
+        // Parse and display the MDX content
+        const content = parseMDXContent(mdxContent);
+        modalContent.innerHTML = content;
+        modalContent.appendChild(closeButton);
+        modal.appendChild(modalContent);
+        
+        document.body.appendChild(modal);
+        
+        // Show success notification
+        showNotification(`✅ ${token.symbol} token data displayed!`, 'success');
+        
+      } catch (err) {
+        console.error('Error displaying token data on page:', err);
+        showNotification('❌ Failed to display token data. Please try again.', 'error');
+      }
+    }
+
+    function parseMDXContent(mdxContent) {
+      // Simple MDX to HTML conversion
+      let html = mdxContent;
+      
+      // Remove frontmatter
+      html = html.replace(/---[\s\S]*?---/, '');
+      
+      // Convert markdown headers
+      html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+      html = html.replace(/^## (.*$)/gm, '<h2>$2</h2>');
+      html = html.replace(/^### (.*$)/gm, '<h3>$3</h3>');
+      
+      // Convert bold text
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Convert code blocks
+      html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      // Convert links
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+      
+      // Convert line breaks
+      html = html.replace(/\n\n/g, '</p><p>');
+      html = html.replace(/\n/g, '<br>');
+      
+      // Wrap in paragraphs
+      html = '<p>' + html + '</p>';
+      
+      return html;
+    }
     
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
