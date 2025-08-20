@@ -544,6 +544,15 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           console.log('Token button created and added to DOM');
         }
 
+        // Check if we already attached listeners to this input
+        if (searchInput.dataset.dpListenersAttached) {
+          console.log('Listeners already attached to this input');
+          return;
+        }
+
+        // Mark this input as having listeners attached
+        searchInput.dataset.dpListenersAttached = 'true';
+
         // Position the button relative to the search input
         const rect = searchInput.getBoundingClientRect();
         const buttonWidth = Math.min(300, Math.max(200, button.offsetWidth || 200));
@@ -569,8 +578,11 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             console.log('Search input value changed to:', currentValue);
             
             if (currentValue.length >= 2) {
-              // Update button text with user input
-              button.textContent = `Looking for "${currentValue.toUpperCase()}" token data?`;
+              // Update button text with user input (without triggering events)
+              const newText = `Looking for "${currentValue.toUpperCase()}" token data?`;
+              if (button.textContent !== newText) {
+                button.textContent = newText;
+              }
               
               // Force show the button with explicit styles
               button.style.display = 'block';
@@ -596,10 +608,16 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           }
         };
 
-        // Listen for input events
-        searchInput.addEventListener('input', checkInput);
-        searchInput.addEventListener('focus', checkInput);
-        searchInput.addEventListener('keyup', checkInput);
+        // Listen for input events with debouncing
+        let inputTimeout;
+        const debouncedCheckInput = () => {
+          clearTimeout(inputTimeout);
+          inputTimeout = setTimeout(checkInput, 100);
+        };
+
+        searchInput.addEventListener('input', debouncedCheckInput);
+        searchInput.addEventListener('focus', debouncedCheckInput);
+        searchInput.addEventListener('keyup', debouncedCheckInput);
         
         // Also check immediately
         checkInput();
@@ -611,8 +629,25 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
       watchSearchInput();
       
       // Also watch for dynamic changes with more frequent checks
-      const observer = new MutationObserver(() => {
-        watchSearchInput();
+      let isObserving = false;
+      const observer = new MutationObserver((mutations) => {
+        if (isObserving) return; // Prevent recursive calls
+        
+        // Only trigger if the search input or its container changed
+        const relevantChanges = mutations.some(mutation => {
+          return mutation.type === 'childList' && 
+                 (mutation.target.classList.contains('search-overlay') ||
+                  mutation.target.querySelector('input[placeholder*="search"]') ||
+                  mutation.addedNodes.length > 0);
+        });
+        
+        if (relevantChanges) {
+          isObserving = true;
+          setTimeout(() => {
+            watchSearchInput();
+            isObserving = false;
+          }, 100);
+        }
       });
       
       observer.observe(document.body, {
