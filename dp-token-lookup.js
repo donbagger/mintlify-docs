@@ -744,9 +744,24 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           const urlParams = new URLSearchParams(window.location.search);
           const query = urlParams.get('query');
           
+          console.log('On token lookup page, URL params:', window.location.search);
+          console.log('All URL parameters:', Object.fromEntries(urlParams.entries()));
+          
           if (query) {
             console.log('Found query parameter:', query);
             handleTokenLookupResults(urlParams);
+          } else {
+            // Check if there are any token parameters without a query
+            const hasTokenParams = Array.from(urlParams.keys()).some(key => key !== 'query');
+            if (hasTokenParams) {
+              console.log('Found token parameters without query, creating query from URL');
+              // Create a query from the first token symbol
+              const firstToken = Array.from(urlParams.keys()).find(key => key !== 'query');
+              if (firstToken) {
+                urlParams.set('query', firstToken);
+                handleTokenLookupResults(urlParams);
+              }
+            }
           }
         }
         
@@ -766,44 +781,71 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
 
     async function handleTokenLookupResults(urlParams) {
       try {
+        console.log('handleTokenLookupResults called with:', urlParams);
+        
         const query = urlParams.get('query');
         const resultsContainer = document.getElementById('dp-token-results');
         const resultsList = document.getElementById('dp-results-list');
         const lookupContainer = document.getElementById('dp-token-lookup');
         
-        if (!resultsContainer || !resultsList) return;
+        console.log('Found elements:', {
+          resultsContainer: !!resultsContainer,
+          resultsList: !!resultsList,
+          lookupContainer: !!lookupContainer
+        });
+        
+        if (!resultsContainer || !resultsList) {
+          console.error('Required elements not found');
+          return;
+        }
         
         // Hide the lookup widget and show results
-        if (lookupContainer) lookupContainer.style.display = 'none';
+        if (lookupContainer) {
+          lookupContainer.style.display = 'none';
+          console.log('Hidden lookup container');
+        }
         resultsContainer.style.display = 'block';
+        console.log('Showed results container');
         
         // Parse token parameters
         const tokens = [];
+        console.log('Parsing URL parameters...');
+        
         for (const [key, value] of urlParams.entries()) {
+          console.log('Parameter:', key, '=', value);
           if (key !== 'query' && value.includes(':')) {
             const [chain, address] = value.split(':');
-            tokens.push({
+            const token = {
               symbol: key.toUpperCase(),
               chain: decodeURIComponent(chain),
               address: decodeURIComponent(address)
-            });
+            };
+            tokens.push(token);
+            console.log('Parsed token:', token);
           }
         }
         
+        console.log('Total tokens found:', tokens.length);
+        
         if (tokens.length === 0) {
+          console.log('No tokens found, showing error message');
           resultsList.innerHTML = '<p>No tokens found.</p>';
           return;
         }
         
         // Fetch data for each token
         resultsList.innerHTML = '<div class="dp-loading">Loading token data...</div>';
+        console.log('Started loading token data...');
         
         const tokenCards = [];
         for (const token of tokens) {
           try {
+            console.log('Fetching data for token:', token);
             const priceData = await fetchTokenPrice(token);
             const price = priceData?.price_usd || 'N/A';
             const volume24h = priceData?.volume_usd_24h || 'N/A';
+            
+            console.log('Token data received:', { price, volume24h });
             
             tokenCards.push(`
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 8px 0; background: white;">
@@ -828,13 +870,21 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           }
         }
         
-        resultsList.innerHTML = `
+        const finalHTML = `
           <h3>Search Results for "${query}"</h3>
           ${tokenCards.join('')}
         `;
         
+        console.log('Setting results HTML:', finalHTML);
+        resultsList.innerHTML = finalHTML;
+        console.log('Results displayed successfully');
+        
       } catch (err) {
         console.error('Error handling token lookup results:', err);
+        const resultsList = document.getElementById('dp-results-list');
+        if (resultsList) {
+          resultsList.innerHTML = `<p style="color: #ef4444;">Error loading results: ${err.message}</p>`;
+        }
       }
     }
 
@@ -851,5 +901,19 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
     }
   } catch (err) {
     console.error('Fatal error in DexPaprika search script:', err);
+  }
+  
+  // Also check for URL parameters after a short delay to ensure DOM is ready
+  if (window.location.pathname.includes('/tools/token-lookup') && window.location.search) {
+    setTimeout(() => {
+      console.log('Delayed URL parameter check...');
+      const urlParams = new URLSearchParams(window.location.search);
+      const query = urlParams.get('query');
+      
+      if (query || Array.from(urlParams.keys()).some(key => key !== 'query')) {
+        console.log('Processing URL parameters in delayed check');
+        handleTokenLookupResults(urlParams);
+      }
+    }, 1000);
   }
 })();
