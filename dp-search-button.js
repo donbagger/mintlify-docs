@@ -65,10 +65,36 @@ var currentButton = null;
 var currentSearchInput = null;
 var lastInputValue = '';
 var checkInterval = null;
+var setupAttempts = 0;
+
+// Force show button function
+function forceShowButton() {
+  if (!currentButton) {
+    console.log('No button to show');
+    return;
+  }
+  
+  console.log('Force showing button...');
+  currentButton.style.display = 'block';
+  currentButton.style.opacity = '1';
+  currentButton.style.visibility = 'visible';
+  currentButton.classList.add('show');
+  
+  // Force position
+  if (currentSearchInput) {
+    var rect = currentSearchInput.getBoundingClientRect();
+    currentButton.style.left = (rect.right + 10) + 'px';
+    currentButton.style.top = (rect.top - 2) + 'px';
+    console.log('Button forced positioned at:', currentButton.style.left, currentButton.style.top);
+  }
+}
 
 // Update button visibility
 function updateButtonVisibility() {
-  if (!currentSearchInput || !currentButton) return;
+  if (!currentSearchInput || !currentButton) {
+    console.log('Missing search input or button');
+    return;
+  }
   
   var value = currentSearchInput.value.trim();
   console.log('Checking input value:', value, 'Last value:', lastInputValue);
@@ -82,8 +108,7 @@ function updateButtonVisibility() {
       
       if (results.length > 0) {
         currentButton.textContent = 'Looking for "' + value.toUpperCase() + '" token data?';
-        currentButton.classList.add('show');
-        positionButton();
+        forceShowButton();
         console.log('Button should be visible now');
       } else {
         currentButton.classList.remove('show');
@@ -109,6 +134,7 @@ function positionButton() {
 // Setup global search button
 function setupGlobalSearchButton() {
   console.log('Setting up global search button...');
+  setupAttempts++;
   
   var searchInput = findSearchInput();
   if (!searchInput) {
@@ -127,7 +153,10 @@ function setupGlobalSearchButton() {
   currentButton = document.createElement('button');
   currentButton.className = 'dp-token-button';
   currentButton.textContent = 'Looking for token data?';
+  currentButton.style.cssText = 'position:fixed!important;background:#16A34A!important;color:white!important;border:none!important;border-radius:6px!important;padding:8px 16px!important;font-size:14px!important;cursor:pointer!important;z-index:99999!important;display:none!important;font-weight:500!important;box-shadow:0 4px 8px rgba(0,0,0,0.2)!important;transition:all 0.2s ease!important;min-width:200px!important;text-align:center!important;pointer-events:auto!important;';
   document.body.appendChild(currentButton);
+  
+  console.log('Button created:', currentButton);
   
   // Store reference
   currentSearchInput = searchInput;
@@ -162,6 +191,15 @@ function setupGlobalSearchButton() {
     if (currentSearchInput && currentSearchInput.value.trim() !== lastInputValue) {
       console.log('Periodic check detected value change');
       updateButtonVisibility();
+    }
+    
+    // Force check if button should be visible
+    if (currentSearchInput && currentSearchInput.value.trim().length >= 1) {
+      var results = searchTokens(currentSearchInput.value.trim());
+      if (results.length > 0 && currentButton && !currentButton.classList.contains('show')) {
+        console.log('Periodic check: Button should be visible, forcing show');
+        forceShowButton();
+      }
     }
   }, 100);
   
@@ -222,6 +260,14 @@ function init() {
       console.log('Search input visible:', searchInput.offsetParent !== null);
       console.log('Current button:', currentButton);
       console.log('Last input value:', lastInputValue);
+      
+      if (currentButton) {
+        console.log('Button display style:', currentButton.style.display);
+        console.log('Button opacity:', currentButton.style.opacity);
+        console.log('Button visibility:', currentButton.style.visibility);
+        console.log('Button classes:', currentButton.className);
+        console.log('Button position:', currentButton.style.left, currentButton.style.top);
+      }
     } else {
       console.log('No search input found');
     }
