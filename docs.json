@@ -73,13 +73,12 @@
               "/tutorials/real-time-analytics-with-influxdb"
             ]
           },
-          {
-            "group": "Tools",
-            "pages": [
-              "/tools/token-lookup",
-              "/tools/token-template"
-            ]
-          }
+                                {
+                        "group": "Tools",
+                        "pages": [
+                          "/tools/token-lookup"
+                        ]
+                      }
         ]
       },
       {
