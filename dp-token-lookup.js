@@ -473,24 +473,18 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           // If single result, redirect to template page with token data
           if (results.length === 1) {
             const token = results[0];
-            console.log('Single token found, redirecting to template:', token);
-            
-            // Fetch real-time data first
-            const priceData = await fetchTokenPrice(token);
-            
-            // Redirect to template page with data
+            console.log('Single token found, redirecting to lookup page:', token);
+
+            // Redirect to lookup page with single token data
             const params = new URLSearchParams({
               symbol: token.symbol,
               name: token.name,
               chain: token.chain,
               address: token.address || '',
-              price: priceData?.price_usd || 'N/A',
-              volume: priceData?.volume_usd_24h || 'N/A',
-              marketCap: priceData?.market_cap_usd || 'N/A',
               query: query
             });
-            
-            window.location.href = `/tools/token-template?${params.toString()}`;
+
+            window.location.href = `/tools/token-lookup?${params.toString()}`;
             return;
           }
           
@@ -837,112 +831,130 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
       }
     }
 
-    async function handleTokenLookupResults(urlParams) {
+    function handleTokenLookupResults(urlParams) {
       try {
-        console.log('handleTokenLookupResults called with:', urlParams);
+        console.log('Handling token lookup results with params:', urlParams);
         
-        const query = urlParams.get('query');
         const resultsContainer = document.getElementById('dp-token-results');
-        const resultsList = document.getElementById('dp-results-list');
-        const lookupContainer = document.getElementById('dp-token-lookup');
+        const searchQueryElement = document.getElementById('dp-search-query');
+        const tableBody = document.getElementById('dp-results-table-body');
+        const noResultsElement = document.getElementById('dp-no-results');
         
-        console.log('Found elements:', {
-          resultsContainer: !!resultsContainer,
-          resultsList: !!resultsList,
-          lookupContainer: !!lookupContainer
-        });
-        
-        if (!resultsContainer || !resultsList) {
+        if (!resultsContainer || !tableBody) {
           console.error('Required elements not found');
           return;
         }
         
-        // Hide the lookup widget and show results
-        if (lookupContainer) {
-          lookupContainer.style.display = 'none';
-          console.log('Hidden lookup container');
-        }
+        // Show loading state
         resultsContainer.style.display = 'block';
-        console.log('Showed results container');
+        tableBody.innerHTML = '<tr><td colspan="6" class="dp-loading">Loading token data...</td></tr>';
         
-        // Parse token parameters
+        // Get search query
+        const query = urlParams.get('query') || '';
+        if (searchQueryElement) {
+          searchQueryElement.textContent = query ? `Results for "${query}"` : 'All available tokens';
+        }
+        
+        // Parse tokens from URL parameters
         const tokens = [];
-        console.log('Parsing URL parameters...');
         
-        for (const [key, value] of urlParams.entries()) {
-          console.log('Parameter:', key, '=', value);
-          if (key !== 'query' && value.includes(':')) {
-            const [chain, address] = value.split(':');
-            const token = {
-              symbol: key.toUpperCase(),
-              chain: decodeURIComponent(chain),
-              address: decodeURIComponent(address)
-            };
-            tokens.push(token);
-            console.log('Parsed token:', token);
+        // Check if we have individual token parameters (single result)
+        const symbol = urlParams.get('symbol');
+        if (symbol) {
+          tokens.push({
+            symbol: symbol,
+            name: urlParams.get('name') || symbol,
+            chain: urlParams.get('chain') || 'ethereum',
+            address: urlParams.get('address') || ''
+          });
+        } else {
+          // Check for multiple tokens in format TOKEN=chain:address
+          for (const [key, value] of urlParams.entries()) {
+            if (key !== 'query' && value.includes(':')) {
+              const [chain, address] = value.split(':');
+              tokens.push({
+                symbol: key,
+                name: key, // We'll try to get the full name from our data
+                chain: chain,
+                address: address
+              });
+            }
           }
         }
         
-        console.log('Total tokens found:', tokens.length);
+        console.log('Parsed tokens:', tokens);
         
         if (tokens.length === 0) {
-          console.log('No tokens found, showing error message');
-          resultsList.innerHTML = '<p>No tokens found.</p>';
+          // No tokens found, show no results
+          tableBody.innerHTML = '';
+          noResultsElement.style.display = 'block';
           return;
         }
         
-        // Fetch data for each token
-        resultsList.innerHTML = '<div class="dp-loading">Loading token data...</div>';
-        console.log('Started loading token data...');
+        // Hide no results
+        noResultsElement.style.display = 'none';
         
-        const tokenCards = [];
-        for (const token of tokens) {
+        // Fetch real-time data for all tokens
+        Promise.all(tokens.map(async (token) => {
           try {
-            console.log('Fetching data for token:', token);
             const priceData = await fetchTokenPrice(token);
-            const price = priceData?.price_usd || 'N/A';
-            const volume24h = priceData?.volume_usd_24h || 'N/A';
-            
-            console.log('Token data received:', { price, volume24h });
-            
-            tokenCards.push(`
-              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 8px 0; background: white;">
-                <h4 style="margin: 0 0 8px 0;">${token.symbol} - ${token.chain}</h4>
-                <p style="margin: 4px 0; color: #6b7280;">Price: $${price}</p>
-                <p style="margin: 4px 0; color: #6b7280;">24h Volume: $${volume24h}</p>
-                <div style="margin-top: 12px;">
-                  <a href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" style="margin-right: 8px; padding: 4px 8px; background: #16A34A; color: white; text-decoration: none; border-radius: 4px; font-size: 12px;">Price Data</a>
-                  <a href="/api-reference/tokens/get-top-x-pools-for-a-token?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" style="margin-right: 8px; padding: 4px 8px; background: #16A34A; color: white; text-decoration: none; border-radius: 4px; font-size: 12px;">Top Pools</a>
-                  <button onclick="generateTokenPage('${token.symbol}', '${token.chain}', '${token.address}')" style="padding: 4px 8px; background: #16A34A; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Download MDX</button>
-                </div>
-              </div>
-            `);
+            return {
+              ...token,
+              priceData: priceData
+            };
           } catch (err) {
-            console.error('Error fetching data for token:', token, err);
-            tokenCards.push(`
-              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 8px 0; background: white;">
-                <h4 style="margin: 0 0 8px 0;">${token.symbol} - ${token.chain}</h4>
-                <p style="margin: 4px 0; color: #ef4444;">Error loading data</p>
-              </div>
-            `);
+            console.error(`Error fetching data for ${token.symbol}:`, err);
+            return {
+              ...token,
+              priceData: null
+            };
           }
-        }
-        
-        const finalHTML = `
-          <h3>Search Results for "${query}"</h3>
-          ${tokenCards.join('')}
-        `;
-        
-        console.log('Setting results HTML:', finalHTML);
-        resultsList.innerHTML = finalHTML;
-        console.log('Results displayed successfully');
+        })).then(tokensWithData => {
+          // Populate table
+          tableBody.innerHTML = tokensWithData.map(token => {
+            const price = token.priceData?.price_usd || 'N/A';
+            const volume = token.priceData?.volume_usd_24h || 'N/A';
+            
+            return `
+              <tr>
+                <td>
+                  <span class="dp-token-symbol">${token.symbol}</span>
+                </td>
+                <td>${token.name}</td>
+                <td>
+                  <span class="dp-token-chain ${token.chain}">${token.chain}</span>
+                </td>
+                <td>
+                  <span class="dp-token-price">$${price}</span>
+                </td>
+                <td>
+                  <span class="dp-token-volume">$${volume}</span>
+                </td>
+                <td>
+                  <div class="dp-token-actions">
+                    <a href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network?symbol=${token.symbol}&chain=${token.chain}&address=${token.address}" 
+                       class="dp-action-btn" target="_self">Price</a>
+                    <a href="/api-reference/tokens/get-top-x-pools-for-a-token?symbol=${token.symbol}&chain=${token.chain}&address=${token.address}" 
+                       class="dp-action-btn" target="_self">Pools</a>
+                    <a href="/api-reference/pools/get-ohlcv-data-for-a-pool-pair?symbol=${token.symbol}&chain=${token.chain}&address=${token.address}" 
+                       class="dp-action-btn" target="_self">OHLCV</a>
+                    <a href="/get-started/sdk-ts?symbol=${token.symbol}&chain=${token.chain}&address=${token.address}" 
+                       class="dp-action-btn" target="_self">SDK</a>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+          
+          console.log('Table populated with', tokensWithData.length, 'tokens');
+          
+          // Show success notification
+          showNotification(`✅ Found ${tokensWithData.length} token(s)`, 'success');
+        });
         
       } catch (err) {
         console.error('Error handling token lookup results:', err);
-        const resultsList = document.getElementById('dp-results-list');
-        if (resultsList) {
-          resultsList.innerHTML = `<p style="color: #ef4444;">Error loading results: ${err.message}</p>`;
-        }
+        showNotification('❌ Error loading token data', 'error');
       }
     }
 
@@ -1171,66 +1183,4 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         document.body.appendChild(modal);
         
         // Show success notification
-        showNotification(`✅ ${token.symbol} token data displayed!`, 'success');
-        
-      } catch (err) {
-        console.error('Error displaying token data on page:', err);
-        showNotification('❌ Failed to display token data. Please try again.', 'error');
-      }
-    }
-
-    function parseMDXContent(mdxContent) {
-      // Simple MDX to HTML conversion
-      let html = mdxContent;
-      
-      // Remove frontmatter
-      html = html.replace(/---[\s\S]*?---/, '');
-      
-      // Convert markdown headers
-      html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
-      html = html.replace(/^## (.*$)/gm, '<h2>$2</h2>');
-      html = html.replace(/^### (.*$)/gm, '<h3>$3</h3>');
-      
-      // Convert bold text
-      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
-      // Convert code blocks
-      html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-      
-      // Convert links
-      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-      
-      // Convert line breaks
-      html = html.replace(/\n\n/g, '</p><p>');
-      html = html.replace(/\n/g, '<br>');
-      
-      // Wrap in paragraphs
-      html = '<p>' + html + '</p>';
-      
-      return html;
-    }
-    
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-  } catch (err) {
-    console.error('Fatal error in DexPaprika search script:', err);
-  }
-  
-  // Also check for URL parameters after a short delay to ensure DOM is ready
-  if (window.location.pathname.includes('/tools/token-lookup') && window.location.search) {
-    setTimeout(() => {
-      console.log('Delayed URL parameter check...');
-      const urlParams = new URLSearchParams(window.location.search);
-      const query = urlParams.get('query');
-      
-      if (query || Array.from(urlParams.keys()).some(key => key !== 'query')) {
-        console.log('Processing URL parameters in delayed check');
-        handleTokenLookupResults(urlParams);
-      }
-    }, 1000);
-  }
-})();
+        showNotification(`
