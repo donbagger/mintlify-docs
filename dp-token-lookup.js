@@ -4,47 +4,52 @@
   try {
     const CSS = `
       .dp-token-button {
-        position: fixed;
-        background: #16A34A;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 8px 16px;
-        font-size: 14px;
-        cursor: pointer;
-        z-index: 9999;
-        display: none;
-        font-weight: 500;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        transition: all 0.2s ease;
-        min-width: 200px;
-        text-align: center;
+        position: fixed !important;
+        background: #16A34A !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+        cursor: pointer !important;
+        z-index: 99999 !important;
+        display: none !important;
+        font-weight: 500 !important;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        transition: all 0.2s ease !important;
+        min-width: 200px !important;
+        text-align: center !important;
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
       .dp-token-button:hover {
-        background: #15803D;
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        background: #15803D !important;
+        transform: scale(1.05) !important;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
       }
       .dp-token-button.show {
-        display: block;
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
       .dp-token-button:disabled {
-        background: #6b7280;
-        cursor: not-allowed;
-        transform: none;
+        background: #6b7280 !important;
+        cursor: not-allowed !important;
+        transform: none !important;
       }
       .dp-debug-button {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        background: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 4px 8px;
-        font-size: 12px;
-        cursor: pointer;
-        z-index: 10000;
+        position: fixed !important;
+        top: 10px !important;
+        right: 10px !important;
+        background: #ef4444 !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 4px !important;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+        cursor: pointer !important;
+        z-index: 100000 !important;
       }
       .dp-lookup{position:relative;max-width:640px;margin:16px 0}
       .dp-lookup input{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
@@ -420,9 +425,26 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         const button = document.createElement('button');
         button.className = 'dp-token-button';
         button.textContent = 'Looking for token data?';
-        button.style.display = 'none';
-        button.style.position = 'fixed'; // Use fixed positioning
-        button.style.zIndex = '9999'; // Ensure it's on top
+        button.style.cssText = `
+          position: fixed !important;
+          background: #16A34A !important;
+          color: white !important;
+          border: none !important;
+          border-radius: 6px !important;
+          padding: 8px 16px !important;
+          font-size: 14px !important;
+          cursor: pointer !important;
+          z-index: 99999 !important;
+          display: none !important;
+          font-weight: 500 !important;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+          transition: all 0.2s ease !important;
+          min-width: 200px !important;
+          text-align: center !important;
+          pointer-events: auto !important;
+          opacity: 1 !important;
+          visibility: visible !important;
+        `;
         
         button.addEventListener('click', async () => {
           const searchInput = findSearchInput();
@@ -542,9 +564,23 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             console.log('Search input value changed to:', currentValue);
             
             if (currentValue.length >= 2) {
+              // Force show the button with explicit styles
+              button.style.display = 'block';
+              button.style.opacity = '1';
+              button.style.visibility = 'visible';
+              button.style.pointerEvents = 'auto';
               button.classList.add('show');
-              console.log('Button should now be visible');
+              console.log('Button should now be visible - styles applied:', {
+                display: button.style.display,
+                opacity: button.style.opacity,
+                visibility: button.style.visibility,
+                zIndex: button.style.zIndex
+              });
             } else {
+              button.style.display = 'none';
+              button.style.opacity = '0';
+              button.style.visibility = 'hidden';
+              button.style.pointerEvents = 'none';
               button.classList.remove('show');
               console.log('Button should now be hidden');
             }
@@ -636,9 +672,22 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             console.log('Search input value:', searchInput.value);
             console.log('Search input rect:', searchInput.getBoundingClientRect());
             
-            // Trigger the watch function to properly position the button
-            setupGlobalSearchButton();
-            console.log('Search button setup triggered');
+            // Check if token button exists
+            const tokenButton = document.querySelector('.dp-token-button');
+            if (tokenButton) {
+              console.log('Token button found, forcing it to show...');
+              tokenButton.style.display = 'block';
+              tokenButton.style.opacity = '1';
+              tokenButton.style.visibility = 'visible';
+              tokenButton.style.left = '50%';
+              tokenButton.style.top = '50%';
+              tokenButton.style.transform = 'translate(-50%, -50%)';
+              tokenButton.style.zIndex = '99999';
+              console.log('Button forced to show in center');
+            } else {
+              console.log('No token button found, creating one...');
+              setupGlobalSearchButton();
+            }
           } else {
             console.log('No search input found');
             alert('No search input found. Check console for details.');
