@@ -773,6 +773,31 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           document.body.appendChild(templateButton);
         }
         
+        // Add manual trigger button for token lookup page
+        if (window.location.pathname.includes('/tools/token-lookup')) {
+          const lookupButton = document.createElement('button');
+          lookupButton.style.cssText = `
+            position: fixed !important;
+            top: 50px !important;
+            right: 10px !important;
+            background: #f59e0b !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 4px !important;
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+            cursor: pointer !important;
+            z-index: 100000 !important;
+          `;
+          lookupButton.textContent = 'Show Table';
+          lookupButton.onclick = () => {
+            console.log('Manual table display triggered');
+            const urlParams = new URLSearchParams(window.location.search);
+            handleTokenLookupResults(urlParams);
+          };
+          document.body.appendChild(lookupButton);
+        }
+        
         // Check if we're on the token lookup page with URL parameters
         if (window.location.pathname.includes('/tools/token-lookup')) {
           const urlParams = new URLSearchParams(window.location.search);
@@ -833,24 +858,37 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
 
     function handleTokenLookupResults(urlParams) {
       try {
-        console.log('Handling token lookup results with params:', urlParams);
+        console.log('=== HANDLING TOKEN LOOKUP RESULTS ===');
+        console.log('URL params object:', urlParams);
+        console.log('URL search string:', window.location.search);
         
         const resultsContainer = document.getElementById('dp-token-results');
         const searchQueryElement = document.getElementById('dp-search-query');
         const tableBody = document.getElementById('dp-results-table-body');
         const noResultsElement = document.getElementById('dp-no-results');
         
+        console.log('Found elements:', {
+          resultsContainer: !!resultsContainer,
+          searchQueryElement: !!searchQueryElement,
+          tableBody: !!tableBody,
+          noResultsElement: !!noResultsElement
+        });
+        
         if (!resultsContainer || !tableBody) {
           console.error('Required elements not found');
+          console.log('Available elements with dp- prefix:', document.querySelectorAll('[id^="dp-"]'));
           return;
         }
         
         // Show loading state
+        console.log('Showing results container...');
         resultsContainer.style.display = 'block';
         tableBody.innerHTML = '<tr><td colspan="6" class="dp-loading">Loading token data...</td></tr>';
         
         // Get search query
         const query = urlParams.get('query') || '';
+        console.log('Search query:', query);
+        
         if (searchQueryElement) {
           searchQueryElement.textContent = query ? `Results for "${query}"` : 'All available tokens';
         }
@@ -861,6 +899,7 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         // Check if we have individual token parameters (single result)
         const symbol = urlParams.get('symbol');
         if (symbol) {
+          console.log('Found single token parameter:', symbol);
           tokens.push({
             symbol: symbol,
             name: urlParams.get('name') || symbol,
@@ -869,23 +908,29 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           });
         } else {
           // Check for multiple tokens in format TOKEN=chain:address
+          console.log('Checking for multiple token parameters...');
           for (const [key, value] of urlParams.entries()) {
+            console.log('Parameter:', key, '=', value);
             if (key !== 'query' && value.includes(':')) {
               const [chain, address] = value.split(':');
-              tokens.push({
+              const token = {
                 symbol: key,
                 name: key, // We'll try to get the full name from our data
                 chain: chain,
                 address: address
-              });
+              };
+              tokens.push(token);
+              console.log('Parsed token:', token);
             }
           }
         }
         
-        console.log('Parsed tokens:', tokens);
+        console.log('Total tokens parsed:', tokens.length);
+        console.log('Tokens:', tokens);
         
         if (tokens.length === 0) {
           // No tokens found, show no results
+          console.log('No tokens found, showing no results message');
           tableBody.innerHTML = '';
           noResultsElement.style.display = 'block';
           return;
@@ -894,10 +939,14 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         // Hide no results
         noResultsElement.style.display = 'none';
         
+        console.log('Starting to fetch price data for', tokens.length, 'tokens...');
+        
         // Fetch real-time data for all tokens
         Promise.all(tokens.map(async (token) => {
           try {
+            console.log('Fetching data for token:', token.symbol);
             const priceData = await fetchTokenPrice(token);
+            console.log('Price data for', token.symbol, ':', priceData);
             return {
               ...token,
               priceData: priceData
@@ -910,10 +959,15 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             };
           }
         })).then(tokensWithData => {
+          console.log('All price data fetched, populating table...');
+          console.log('Tokens with data:', tokensWithData);
+          
           // Populate table
           tableBody.innerHTML = tokensWithData.map(token => {
             const price = token.priceData?.price_usd || 'N/A';
             const volume = token.priceData?.volume_usd_24h || 'N/A';
+            
+            console.log('Creating row for token:', token.symbol, 'with price:', price);
             
             return `
               <tr>
@@ -947,6 +1001,7 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
           }).join('');
           
           console.log('Table populated with', tokensWithData.length, 'tokens');
+          console.log('Final table HTML:', tableBody.innerHTML.substring(0, 500));
           
           // Show success notification
           showNotification(`✅ Found ${tokensWithData.length} token(s)`, 'success');
