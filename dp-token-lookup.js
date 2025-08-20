@@ -1183,4 +1183,66 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         document.body.appendChild(modal);
         
         // Show success notification
-        showNotification(`
+        showNotification(`✅ ${token.symbol} token data displayed!`, 'success');
+        
+      } catch (err) {
+        console.error('Error displaying token data on page:', err);
+        showNotification('❌ Failed to display token data. Please try again.', 'error');
+      }
+    }
+
+    function parseMDXContent(mdxContent) {
+      // Simple MDX to HTML conversion
+      let html = mdxContent;
+      
+      // Remove frontmatter
+      html = html.replace(/---[\s\S]*?---/, '');
+      
+      // Convert markdown headers
+      html = html.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+      html = html.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+      html = html.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+      
+      // Convert bold text
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Convert code blocks
+      html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      
+      // Convert links
+      html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+      
+      // Convert line breaks
+      html = html.replace(/\n\n/g, '</p><p>');
+      html = html.replace(/\n/g, '<br>');
+      
+      // Wrap in paragraphs
+      html = '<p>' + html + '</p>';
+      
+      return html;
+    }
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  } catch (err) {
+    console.error('Fatal error in DexPaprika search script:', err);
+  }
+  
+  // Also check for URL parameters after a short delay to ensure DOM is ready
+  if (window.location.pathname.includes('/tools/token-lookup') && window.location.search) {
+    setTimeout(() => {
+      console.log('Delayed URL parameter check...');
+      const urlParams = new URLSearchParams(window.location.search);
+      const query = urlParams.get('query');
+      
+      if (query || Array.from(urlParams.keys()).some(key => key !== 'query')) {
+        console.log('Processing URL parameters in delayed check');
+        handleTokenLookupResults(urlParams);
+      }
+    }, 1000);
+  }
+})();
