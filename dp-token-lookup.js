@@ -466,22 +466,22 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
             return;
           }
           
-          // If multiple results, let user choose
-          if (results.length > 1) {
-            const tokenNames = results.map(t => `${t.symbol} (${t.name})`).join('\n');
-            const choice = prompt(`Multiple tokens found for "${query}". Choose one:\n\n${tokenNames}\n\nEnter the symbol (e.g., SOL):`);
-            if (!choice) return;
-            
-            const selectedToken = results.find(t => t.symbol.toLowerCase() === choice.toLowerCase());
-            if (!selectedToken) {
-              alert('Invalid selection');
-              return;
-            }
-            
-            await generateAndDownloadTokenPage(selectedToken);
-          } else {
-            await generateAndDownloadTokenPage(results[0]);
+          // If single result, go directly to that token
+          if (results.length === 1) {
+            const token = results[0];
+            console.log('Single token found, navigating to:', token);
+            await generateAndDownloadTokenPage(token);
+            return;
           }
+          
+          // If multiple results, navigate to a list page
+          console.log('Multiple tokens found, navigating to list page');
+          const tokenParams = results.map(t => 
+            `${t.symbol}=${encodeURIComponent(t.chain)}:${encodeURIComponent(t.address || '')}`
+          ).join('&');
+          
+          // Navigate to the token lookup page with all results
+          window.location.href = `/tools/token-lookup?${tokenParams}&query=${encodeURIComponent(query)}`;
         });
         
         return button;
@@ -739,6 +739,17 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         };
         document.body.appendChild(debugButton);
         
+        // Check if we're on the token lookup page with URL parameters
+        if (window.location.pathname.includes('/tools/token-lookup')) {
+          const urlParams = new URLSearchParams(window.location.search);
+          const query = urlParams.get('query');
+          
+          if (query) {
+            console.log('Found query parameter:', query);
+            handleTokenLookupResults(urlParams);
+          }
+        }
+        
         // Mount page-specific widgets
         const containers = document.querySelectorAll('#dp-token-lookup');
         console.log('Found', containers.length, 'lookup containers');
@@ -752,6 +763,86 @@ curl "https://api.dexpaprika.com/networks/${token.chain}/tokens/${token.address}
         console.error('Error during initialization:', err);
       }
     }
+
+    async function handleTokenLookupResults(urlParams) {
+      try {
+        const query = urlParams.get('query');
+        const resultsContainer = document.getElementById('dp-token-results');
+        const resultsList = document.getElementById('dp-results-list');
+        const lookupContainer = document.getElementById('dp-token-lookup');
+        
+        if (!resultsContainer || !resultsList) return;
+        
+        // Hide the lookup widget and show results
+        if (lookupContainer) lookupContainer.style.display = 'none';
+        resultsContainer.style.display = 'block';
+        
+        // Parse token parameters
+        const tokens = [];
+        for (const [key, value] of urlParams.entries()) {
+          if (key !== 'query' && value.includes(':')) {
+            const [chain, address] = value.split(':');
+            tokens.push({
+              symbol: key.toUpperCase(),
+              chain: decodeURIComponent(chain),
+              address: decodeURIComponent(address)
+            });
+          }
+        }
+        
+        if (tokens.length === 0) {
+          resultsList.innerHTML = '<p>No tokens found.</p>';
+          return;
+        }
+        
+        // Fetch data for each token
+        resultsList.innerHTML = '<div class="dp-loading">Loading token data...</div>';
+        
+        const tokenCards = [];
+        for (const token of tokens) {
+          try {
+            const priceData = await fetchTokenPrice(token);
+            const price = priceData?.price_usd || 'N/A';
+            const volume24h = priceData?.volume_usd_24h || 'N/A';
+            
+            tokenCards.push(`
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 8px 0; background: white;">
+                <h4 style="margin: 0 0 8px 0;">${token.symbol} - ${token.chain}</h4>
+                <p style="margin: 4px 0; color: #6b7280;">Price: $${price}</p>
+                <p style="margin: 4px 0; color: #6b7280;">24h Volume: $${volume24h}</p>
+                <div style="margin-top: 12px;">
+                  <a href="/api-reference/tokens/get-a-tokens-latest-data-on-a-network?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" style="margin-right: 8px; padding: 4px 8px; background: #16A34A; color: white; text-decoration: none; border-radius: 4px; font-size: 12px;">Price Data</a>
+                  <a href="/api-reference/tokens/get-top-x-pools-for-a-token?symbol=${encodeURIComponent(token.symbol)}&chain=${encodeURIComponent(token.chain)}&address=${encodeURIComponent(token.address)}" style="margin-right: 8px; padding: 4px 8px; background: #16A34A; color: white; text-decoration: none; border-radius: 4px; font-size: 12px;">Top Pools</a>
+                  <button onclick="generateTokenPage('${token.symbol}', '${token.chain}', '${token.address}')" style="padding: 4px 8px; background: #16A34A; color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Download MDX</button>
+                </div>
+              </div>
+            `);
+          } catch (err) {
+            console.error('Error fetching data for token:', token, err);
+            tokenCards.push(`
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 8px 0; background: white;">
+                <h4 style="margin: 0 0 8px 0;">${token.symbol} - ${token.chain}</h4>
+                <p style="margin: 4px 0; color: #ef4444;">Error loading data</p>
+              </div>
+            `);
+          }
+        }
+        
+        resultsList.innerHTML = `
+          <h3>Search Results for "${query}"</h3>
+          ${tokenCards.join('')}
+        `;
+        
+      } catch (err) {
+        console.error('Error handling token lookup results:', err);
+      }
+    }
+
+    // Global function for generating token pages
+    window.generateTokenPage = async function(symbol, chain, address) {
+      const token = { symbol, chain, address };
+      await generateAndDownloadTokenPage(token);
+    };
     
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
